@@ -31,12 +31,22 @@ pub fn run() {
         ])
         .setup(|app| {
             let handle = app.handle().clone();
-            let data_dir = dirs::home_dir().unwrap().join(".claude").join("projects");
+            let Some(home) = dirs::home_dir() else {
+                log::error!("Cannot determine home directory; skipping initial import");
+                return Ok(());
+            };
+            let data_dir = home.join(".claude").join("projects");
+            let handle2 = handle.clone();
             tauri::async_runtime::spawn(async move {
-                let state = handle.state::<AppState>();
-                let conn = state.db.lock().unwrap();
-                if let Err(e) = importer::sync::import_all(&conn, &data_dir) {
-                    log::error!("Initial import failed: {e}");
+                let result = tauri::async_runtime::spawn_blocking(move || {
+                    let state = handle2.state::<AppState>();
+                    let conn = state.db.lock().unwrap();
+                    importer::sync::import_all(&conn, &data_dir)
+                }).await;
+                match result {
+                    Ok(Ok(())) => {}
+                    Ok(Err(e)) => log::error!("Initial import failed: {e}"),
+                    Err(e) => log::error!("Import task panicked: {e}"),
                 }
             });
             Ok(())
