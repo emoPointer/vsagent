@@ -1,13 +1,17 @@
 import { useMessages } from '../../features/conversations/useMessages';
-import { useConversations } from '../../features/conversations/useConversations';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../lib/tauri';
 import { MessageList } from './MessageList';
 
 interface Props { conversationId: string; }
 
 export function ConversationView({ conversationId }: Props) {
   const { data: messages = [], isLoading } = useMessages(conversationId);
-  const { data: conversations = [] } = useConversations();
-  const conv = conversations.find((c) => c.id === conversationId);
+  const { data: conv } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: () => api.listConversations(),
+    select: (convs) => convs.find((c) => c.id === conversationId),
+  });
 
   return (
     <div className="flex flex-col h-full">

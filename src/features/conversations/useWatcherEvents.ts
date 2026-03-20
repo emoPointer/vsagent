@@ -6,17 +6,25 @@ export function useWatcherEvents() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const unlistenUpdated = listen<{ conversation_id: string }>('conversation:updated', (e) => {
+    let cancelled = false;
+    const unlisteners: Array<() => void> = [];
+
+    listen<{ conversation_id: string }>('conversation:updated', (e) => {
       qc.invalidateQueries({ queryKey: ['messages', e.payload.conversation_id] });
+    }).then((fn) => {
+      if (cancelled) { fn(); } else { unlisteners.push(fn); }
     });
-    const unlistenChanged = listen('conversations:changed', () => {
+
+    listen('conversations:changed', () => {
       qc.invalidateQueries({ queryKey: ['conversations'] });
       qc.invalidateQueries({ queryKey: ['workspaces'] });
+    }).then((fn) => {
+      if (cancelled) { fn(); } else { unlisteners.push(fn); }
     });
 
     return () => {
-      unlistenUpdated.then((fn) => fn());
-      unlistenChanged.then((fn) => fn());
+      cancelled = true;
+      unlisteners.forEach((fn) => fn());
     };
   }, [qc]);
 }

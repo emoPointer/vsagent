@@ -18,17 +18,22 @@ export function ResizeHandle({ onResize }: Props) {
       onResize(e.clientX - startX.current);
       startX.current = e.clientX;
     };
-    const onUp = () => { dragging.current = false; };
+
+    const onUp = () => {
+      dragging.current = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
 
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp, { once: true });
-    window.addEventListener('mouseup', () => {
-      window.removeEventListener('mousemove', onMove);
-    }, { once: true });
+    window.addEventListener('mouseup', onUp);
   }, [onResize]);
 
   return (
     <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize sidebar"
       className="w-1 cursor-col-resize hover:bg-blue-500 transition-colors flex-shrink-0"
       style={{ background: 'var(--border)' }}
       onMouseDown={onMouseDown}

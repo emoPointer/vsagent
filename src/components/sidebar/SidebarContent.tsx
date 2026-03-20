@@ -10,18 +10,14 @@ export function SidebarContent() {
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof conversations>();
-    const ungrouped: typeof conversations = [];
-
     for (const conv of conversations) {
       if (conv.workspace_id) {
         const list = map.get(conv.workspace_id) ?? [];
         list.push(conv);
         map.set(conv.workspace_id, list);
-      } else {
-        ungrouped.push(conv);
       }
     }
-    return { map, ungrouped };
+    return map;
   }, [conversations]);
 
   return (
@@ -51,7 +47,7 @@ export function SidebarContent() {
           <WorkspaceGroup
             key={ws.id}
             workspace={ws}
-            conversations={grouped.map.get(ws.id) ?? []}
+            conversations={grouped.get(ws.id) ?? []}
             searchQuery={search}
           />
         ))}
