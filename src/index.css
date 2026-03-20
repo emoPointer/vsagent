@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252526;
+  --bg-panel: #2d2d30;
+  --text-primary: #cccccc;
+  --text-muted: #888888;
+  --accent: #007acc;
+  --border: #3d3d3d;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 13px;
+  margin: 0;
+  overflow: hidden;
+}
