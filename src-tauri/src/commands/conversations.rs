@@ -1,16 +1,33 @@
-use tauri::command;
+use tauri::State;
+use crate::AppState;
+use crate::db::conversation;
+use crate::domain::Conversation;
 
-#[command]
-pub fn list_conversations(_workspace_id: String) -> Vec<serde_json::Value> {
-    vec![]
+#[tauri::command]
+pub fn list_conversations(
+    state: State<AppState>,
+    workspace_id: Option<String>,
+) -> Result<Vec<Conversation>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::list(&conn, workspace_id.as_deref()).map_err(|e| e.to_string())
 }
 
-#[command]
-pub fn pin_conversation(_id: String) -> Result<(), String> {
-    Ok(())
+#[tauri::command]
+pub fn pin_conversation(
+    state: State<AppState>,
+    id: String,
+    pinned: bool,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::set_pinned(&conn, &id, pinned).map_err(|e| e.to_string())
 }
 
-#[command]
-pub fn archive_conversation(_id: String) -> Result<(), String> {
-    Ok(())
+#[tauri::command]
+pub fn archive_conversation(
+    state: State<AppState>,
+    id: String,
+    archived: bool,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::set_archived(&conn, &id, archived).map_err(|e| e.to_string())
 }

@@ -27,7 +27,7 @@ pub fn run() {
             commands::conversations::pin_conversation,
             commands::conversations::archive_conversation,
             commands::messages::list_messages,
-            commands::search_messages,
+            commands::search::search_messages,
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -36,19 +36,19 @@ pub fn run() {
                 return Ok(());
             };
             let data_dir = home.join(".claude").join("projects");
-            let handle2 = handle.clone();
-            tauri::async_runtime::spawn(async move {
-                let result = tauri::async_runtime::spawn_blocking(move || {
-                    let state = handle2.state::<AppState>();
-                    let conn = state.db.lock().unwrap();
-                    importer::sync::import_all(&conn, &data_dir)
-                }).await;
-                match result {
-                    Ok(Ok(())) => {}
-                    Ok(Err(e)) => log::error!("Initial import failed: {e}"),
-                    Err(e) => log::error!("Import task panicked: {e}"),
+
+            // Run initial import synchronously
+            {
+                let state = handle.state::<AppState>();
+                let conn = state.db.lock().unwrap();
+                if let Err(e) = importer::sync::import_all(&conn, &data_dir) {
+                    log::error!("Initial import failed: {e}");
                 }
-            });
+            }
+
+            // Start file watcher
+            watcher::start(handle.clone(), data_dir);
+
             Ok(())
         })
         .run(tauri::generate_context!())
