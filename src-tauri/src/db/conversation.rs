@@ -22,35 +22,46 @@ pub fn upsert(conn: &Connection, c: &Conversation) -> Result<()> {
     Ok(())
 }
 
+fn row_to_conversation(row: &rusqlite::Row) -> rusqlite::Result<Conversation> {
+    Ok(Conversation {
+        id: row.get(0)?,
+        workspace_id: row.get(1)?,
+        provider: row.get(2)?,
+        title: row.get(3)?,
+        status: row.get(4)?,
+        branch_name: row.get(5)?,
+        pinned: row.get::<_, i64>(6)? != 0,
+        archived: row.get::<_, i64>(7)? != 0,
+        last_message_at: row.get(8)?,
+        jsonl_path: row.get(9)?,
+        created_at: row.get(10)?,
+        updated_at: row.get(11)?,
+    })
+}
+
 pub fn list(conn: &Connection, workspace_id: Option<&str>) -> Result<Vec<Conversation>> {
-    let sql = match workspace_id {
-        Some(_) => "SELECT id,workspace_id,provider,title,status,branch_name,pinned,archived,
-                           last_message_at,jsonl_path,created_at,updated_at
-                    FROM conversations WHERE workspace_id=?1 AND archived=0
-                    ORDER BY updated_at DESC",
-        None => "SELECT id,workspace_id,provider,title,status,branch_name,pinned,archived,
+    match workspace_id {
+        Some(wid) => {
+            let mut stmt = conn.prepare(
+                "SELECT id,workspace_id,provider,title,status,branch_name,pinned,archived,
+                        last_message_at,jsonl_path,created_at,updated_at
+                 FROM conversations WHERE workspace_id=?1 AND archived=0
+                 ORDER BY updated_at DESC",
+            )?;
+            let rows = stmt.query_map(params![wid], row_to_conversation)?;
+            Ok(rows.flatten().collect())
+        }
+        None => {
+            let mut stmt = conn.prepare(
+                "SELECT id,workspace_id,provider,title,status,branch_name,pinned,archived,
                         last_message_at,jsonl_path,created_at,updated_at
                  FROM conversations WHERE archived=0
                  ORDER BY pinned DESC, updated_at DESC",
-    };
-    let mut stmt = conn.prepare(sql)?;
-    let rows = stmt.query_map(params![workspace_id.unwrap_or("")], |row| {
-        Ok(Conversation {
-            id: row.get(0)?,
-            workspace_id: row.get(1)?,
-            provider: row.get(2)?,
-            title: row.get(3)?,
-            status: row.get(4)?,
-            branch_name: row.get(5)?,
-            pinned: row.get::<_, i64>(6)? != 0,
-            archived: row.get::<_, i64>(7)? != 0,
-            last_message_at: row.get(8)?,
-            jsonl_path: row.get(9)?,
-            created_at: row.get(10)?,
-            updated_at: row.get(11)?,
-        })
-    })?;
-    Ok(rows.flatten().collect())
+            )?;
+            let rows = stmt.query_map([], row_to_conversation)?;
+            Ok(rows.flatten().collect())
+        }
+    }
 }
 
 pub fn set_pinned(conn: &Connection, id: &str, pinned: bool) -> Result<()> {
