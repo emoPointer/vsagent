@@ -111,17 +111,28 @@ export function ConversationItem({ conversation, workspaceName, selected, onClic
           )}
         </div>
 
-        {/* Row 2: project name + time */}
-        <div className="flex items-center gap-2" style={{ paddingLeft: 18 }}>
+        {/* Row 2: project name + branch + time */}
+        <div className="flex items-center gap-1" style={{ paddingLeft: 18 }}>
           {workspaceName && (
             <span
               className="truncate"
-              style={{ color: 'var(--text-muted)', fontSize: 10, maxWidth: 120, opacity: 0.75 }}
+              style={{ color: 'var(--text-muted)', fontSize: 10, opacity: 0.75, flexShrink: 1, minWidth: 0 }}
             >
               {workspaceName}
             </span>
           )}
-          <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto' }}>
+          {workspaceName && conversation.branch_name && (
+            <span style={{ color: 'var(--text-muted)', fontSize: 10, opacity: 0.5, flexShrink: 0 }}>/</span>
+          )}
+          {conversation.branch_name && (
+            <span
+              className="truncate"
+              style={{ color: 'var(--text-muted)', fontSize: 10, opacity: 0.75, flexShrink: 1, minWidth: 0 }}
+            >
+              {conversation.branch_name}
+            </span>
+          )}
+          <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto', flexShrink: 0 }}>
             <TimeAgo ms={conversation.last_message_at} />
           </span>
         </div>
