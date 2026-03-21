@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Conversation } from '../../types';
 import { StatusDot } from '../common/StatusDot';
 import { TimeAgo } from '../common/TimeAgo';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ConversationEditDialog } from './ConversationEditDialog';
 import { api } from '../../lib/tauri';
 import { useConversationStore } from '../../features/conversations/conversationStore';
 
@@ -15,28 +16,10 @@ interface Props {
 
 export function ConversationItem({ conversation, selected, onClick }: Props) {
   const [hovered, setHovered] = useState(false);
-  const [renaming, setRenaming] = useState(false);
-  const [draftTitle, setDraftTitle] = useState('');
+  const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const { selectedId, select } = useConversationStore();
-
-  useEffect(() => {
-    if (renaming) {
-      setDraftTitle(conversation.title ?? '');
-      setTimeout(() => { inputRef.current?.select(); }, 0);
-    }
-  }, [renaming, conversation.title]);
-
-  const commitRename = async () => {
-    const t = draftTitle.trim();
-    if (t && t !== conversation.title) {
-      await api.renameConversation(conversation.id, t);
-      qc.invalidateQueries({ queryKey: ['conversations'] });
-    }
-    setRenaming(false);
-  };
 
   const handleDelete = async () => {
     await api.deleteConversation(conversation.id);
@@ -56,6 +39,12 @@ export function ConversationItem({ conversation, selected, onClick }: Props) {
           onCancel={() => setConfirming(false)}
         />
       )}
+      {editing && (
+        <ConversationEditDialog
+          conversation={conversation}
+          onClose={() => setEditing(false)}
+        />
+      )}
 
       <div
         className="w-full text-left px-3 flex flex-col gap-0.5 cursor-pointer"
@@ -69,7 +58,7 @@ export function ConversationItem({ conversation, selected, onClick }: Props) {
           borderLeft: selected ? '2px solid var(--accent)' : '2px solid transparent',
           transition: 'background 0.12s',
         }}
-        onClick={renaming ? undefined : onClick}
+        onClick={onClick}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
@@ -77,52 +66,31 @@ export function ConversationItem({ conversation, selected, onClick }: Props) {
         <div className="flex items-center gap-2 w-full">
           <StatusDot status={conversation.status} />
 
-          {renaming ? (
-            <input
-              ref={inputRef}
-              value={draftTitle}
-              onChange={(e) => setDraftTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') commitRename();
-                if (e.key === 'Escape') setRenaming(false);
-              }}
-              onBlur={commitRename}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                flex: 1,
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--accent)',
-                borderRadius: 4,
-                color: 'var(--text-primary)',
-                fontSize: 12,
-                padding: '2px 6px',
-                fontFamily: 'inherit',
-                outline: 'none',
-              }}
-            />
-          ) : (
-            <span
-              className="flex-1 truncate"
-              style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 500 }}
-            >
-              {label}
-            </span>
-          )}
+          <span
+            className="flex-1 truncate"
+            style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 500 }}
+          >
+            {label}
+          </span>
 
           {/* Action buttons — appear on hover */}
-          {hovered && !renaming && (
+          {hovered && (
             <div
               className="flex items-center gap-1 flex-shrink-0"
               onClick={(e) => e.stopPropagation()}
             >
               <IconBtn
-                title="重命名"
-                onClick={(e) => { e.stopPropagation(); setRenaming(true); }}
+                title="设置"
+                onClick={(e) => { e.stopPropagation(); setEditing(true); }}
               >
-                {/* pencil */}
+                {/* settings / sliders */}
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  <line x1="4" y1="6" x2="20" y2="6"/>
+                  <line x1="4" y1="12" x2="20" y2="12"/>
+                  <line x1="4" y1="18" x2="20" y2="18"/>
+                  <circle cx="9" cy="6" r="2" fill="var(--bg-primary)"/>
+                  <circle cx="15" cy="12" r="2" fill="var(--bg-primary)"/>
+                  <circle cx="9" cy="18" r="2" fill="var(--bg-primary)"/>
                 </svg>
               </IconBtn>
               <IconBtn

@@ -50,3 +50,22 @@ pub fn delete_conversation(
     let conn = state.db.lock().map_err(|e| e.to_string())?;
     conversation::delete(&conn, &id).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn get_conversation_env(
+    state: State<AppState>,
+    id: String,
+) -> Result<String, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::get_env(&conn, &id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_conversation_env(
+    state: State<AppState>,
+    id: String,
+    env_vars: String,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::set_env(&conn, &id, &env_vars).map_err(|e| e.to_string())
+}

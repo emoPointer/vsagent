@@ -37,6 +37,11 @@ export function ConversationView({ conversationId }: Props) {
     enabled: !!conv?.workspace_id,
   });
 
+  const { data: envText = '' } = useQuery({
+    queryKey: ['conversation-env', conversationId],
+    queryFn: () => api.getConversationEnv(conversationId),
+  });
+
   const stats = useMemo(() => {
     const totalTokens = messages.reduce((sum, m) =>
       sum + (m.token_count_input ?? 0) + (m.token_count_output ?? 0), 0);
@@ -111,6 +116,7 @@ export function ConversationView({ conversationId }: Props) {
               sessionId={conversationId}
               cwd={workspacePath}
               command={`claude --resume "${conversationId}"`}
+              envText={envText}
             />
           </div>
         ) : mode === 'terminal' ? (

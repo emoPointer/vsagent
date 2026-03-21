@@ -20,6 +20,12 @@ export const api = {
   deleteConversation: (id: string) =>
     invoke<void>('delete_conversation', { id }),
 
+  getConversationEnv: (id: string) =>
+    invoke<string>('get_conversation_env', { id }),
+
+  setConversationEnv: (id: string, envVars: string) =>
+    invoke<void>('set_conversation_env', { id, envVars }),
+
   listMessages: (conversationId: string) =>
     invoke<Message[]>('list_messages', { conversationId }),
 
@@ -29,8 +35,8 @@ export const api = {
   openInTerminal: (path: string, command?: string) =>
     invoke<void>('open_in_terminal', { path, command: command ?? null }),
 
-  ptyCreate: (sessionId: string, cwd: string, command?: string, rows?: number, cols?: number) =>
-    invoke<void>('pty_create', { sessionId, cwd, command: command ?? null, rows: rows ?? null, cols: cols ?? null }),
+  ptyCreate: (sessionId: string, cwd: string, command?: string, envText?: string, rows?: number, cols?: number) =>
+    invoke<void>('pty_create', { sessionId, cwd, command: command ?? null, envText: envText ?? null, rows: rows ?? null, cols: cols ?? null }),
 
   ptyWrite: (sessionId: string, data: string) =>
     invoke<void>('pty_write', { sessionId, data }),

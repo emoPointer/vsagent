@@ -34,6 +34,7 @@ impl PtyManager {
         session_id: String,
         cwd: String,
         command: Option<String>,
+        env_vars: Vec<(String, String)>,
         rows: u16,
         cols: u16,
     ) -> Result<(), String> {
@@ -61,6 +62,10 @@ impl PtyManager {
         // Ensure proper terminal type and UTF-8 locale for correct CJK character width
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
+        // Inject per-conversation env vars
+        for (k, v) in env_vars {
+            cmd.env(k, v);
+        }
 
         let child = pair
             .slave

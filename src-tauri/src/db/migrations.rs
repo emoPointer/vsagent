@@ -3,6 +3,15 @@ use rusqlite::Connection;
 
 pub fn run(conn: &Connection) -> Result<()> {
     conn.execute_batch(SCHEMA)?;
+    // Idempotent column additions (ALTER TABLE doesn't support IF NOT EXISTS)
+    let env_col_exists: bool = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('conversations') WHERE name='env_vars'",
+        [],
+        |r| r.get::<_, i64>(0),
+    ).unwrap_or(0) > 0;
+    if !env_col_exists {
+        conn.execute("ALTER TABLE conversations ADD COLUMN env_vars TEXT NOT NULL DEFAULT ''", [])?;
+    }
     Ok(())
 }
 

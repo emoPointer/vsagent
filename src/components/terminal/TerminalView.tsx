@@ -12,6 +12,8 @@ interface Props {
   cwd: string;
   /** Shell command to run inside the PTY (e.g. "claude --resume <id>") */
   command?: string;
+  /** Raw KEY=VALUE text block; passed to PTY as injected env vars */
+  envText?: string;
 }
 
 const DARK_THEME = {
@@ -40,7 +42,7 @@ const LIGHT_THEME = {
   white: '#374151', brightWhite: '#1a1a1a',
 };
 
-export function TerminalView({ sessionId, cwd, command }: Props) {
+export function TerminalView({ sessionId, cwd, command, envText }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -134,7 +136,7 @@ export function TerminalView({ sessionId, cwd, command }: Props) {
       raf2 = requestAnimationFrame(() => {
         if (disposed) return;
         fitAddon.fit();
-        api.ptyCreate(sessionId, cwd, command, term.rows, term.cols)
+        api.ptyCreate(sessionId, cwd, command, envText, term.rows, term.cols)
           .then(() => { if (!disposed) ptyReady = true; })
           .catch((err) => {
             if (!disposed) term.writeln(`\r\n\x1b[31mFailed to start terminal: ${err}\x1b[0m\r\n`);

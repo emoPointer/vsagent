@@ -94,6 +94,23 @@ pub fn delete(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn get_env(conn: &Connection, id: &str) -> Result<String> {
+    let env: String = conn.query_row(
+        "SELECT COALESCE(env_vars, '') FROM conversations WHERE id=?1",
+        params![id],
+        |r| r.get(0),
+    )?;
+    Ok(env)
+}
+
+pub fn set_env(conn: &Connection, id: &str, env_vars: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE conversations SET env_vars=?1 WHERE id=?2",
+        params![env_vars, id],
+    )?;
+    Ok(())
+}
+
 pub fn exists(conn: &Connection, id: &str) -> Result<bool> {
     let count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM conversations WHERE id=?1",

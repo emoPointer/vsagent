@@ -30,6 +30,8 @@ pub fn run() {
             commands::conversations::archive_conversation,
             commands::conversations::rename_conversation,
             commands::conversations::delete_conversation,
+            commands::conversations::get_conversation_env,
+            commands::conversations::set_conversation_env,
             commands::messages::list_messages,
             commands::search::search_messages,
             commands::shell::open_in_terminal,
