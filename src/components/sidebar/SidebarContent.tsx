@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { WorkspaceGroup } from './WorkspaceGroup';
+import { ConversationItem } from './ConversationItem';
 import { SearchResultItem } from './SearchResultItem';
 import { useConversations, useWorkspaces } from '../../features/conversations/useConversations';
 import { useSearchResults } from '../../features/search/useSearch';
@@ -23,36 +23,18 @@ export function SidebarContent({ searchQuery }: Props) {
     });
   }, [rawResults]);
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, typeof conversations>();
-    for (const conv of conversations) {
-      if (conv.workspace_id) {
-        const list = map.get(conv.workspace_id) ?? [];
-        list.push(conv);
-        map.set(conv.workspace_id, list);
-      }
-    }
-    // Sort each group by last_message_at desc (most recently active first)
-    for (const [key, list] of map) {
-      map.set(key, [...list].sort((a, b) =>
-        (b.last_message_at ?? b.updated_at) - (a.last_message_at ?? a.updated_at)
-      ));
-    }
-    return map;
+  const workspaceMap = useMemo(() => {
+    return new Map(workspaces.map((ws) => [ws.id, ws.name]));
+  }, [workspaces]);
+
+  // Flat list sorted by most recently active
+  const sorted = useMemo(() => {
+    return [...conversations].sort((a, b) =>
+      (b.last_message_at ?? b.updated_at) - (a.last_message_at ?? a.updated_at)
+    );
   }, [conversations]);
 
-  // Sort workspaces by their most recently active conversation
-  const sortedWorkspaces = useMemo(() => {
-    return [...workspaces].sort((a, b) => {
-      const aLatest = (grouped.get(a.id) ?? [])[0];
-      const bLatest = (grouped.get(b.id) ?? [])[0];
-      const aTime = aLatest ? (aLatest.last_message_at ?? aLatest.updated_at) : 0;
-      const bTime = bLatest ? (bLatest.last_message_at ?? bLatest.updated_at) : 0;
-      return bTime - aTime;
-    });
-  }, [workspaces, grouped]);
-
-  const { startNewSession } = useConversationStore();
+  const { startNewSession, selectedId, select } = useConversationStore();
 
   const handleNewSession = () => {
     const firstWs = workspaces[0];
@@ -119,17 +101,18 @@ export function SidebarContent({ searchQuery }: Props) {
             {isLoading && (
               <p style={{ padding: '16px 12px', fontSize: 12, color: 'var(--text-muted)' }}>加载中...</p>
             )}
-            {!isLoading && conversations.length === 0 && (
+            {!isLoading && sorted.length === 0 && (
               <div style={{ padding: '24px 12px', textAlign: 'center' }}>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>暂无 Claude Code 会话</p>
               </div>
             )}
-            {sortedWorkspaces.map((ws) => (
-              <WorkspaceGroup
-                key={ws.id}
-                workspace={ws}
-                conversations={grouped.get(ws.id) ?? []}
-                searchQuery={searchQuery}
+            {sorted.map((conv) => (
+              <ConversationItem
+                key={conv.id}
+                conversation={conv}
+                workspaceName={conv.workspace_id ? workspaceMap.get(conv.workspace_id) : undefined}
+                selected={selectedId === conv.id}
+                onClick={() => select(conv.id)}
               />
             ))}
           </>

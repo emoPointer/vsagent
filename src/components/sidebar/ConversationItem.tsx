@@ -10,11 +10,12 @@ import { useConversationStore } from '../../features/conversations/conversationS
 
 interface Props {
   conversation: Conversation;
+  workspaceName?: string;
   selected: boolean;
   onClick: () => void;
 }
 
-export function ConversationItem({ conversation, selected, onClick }: Props) {
+export function ConversationItem({ conversation, workspaceName, selected, onClick }: Props) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -110,14 +111,14 @@ export function ConversationItem({ conversation, selected, onClick }: Props) {
           )}
         </div>
 
-        {/* Row 2: branch + time */}
+        {/* Row 2: project name + time */}
         <div className="flex items-center gap-2" style={{ paddingLeft: 18 }}>
-          {conversation.branch_name && (
+          {workspaceName && (
             <span
               className="truncate"
-              style={{ color: 'var(--text-muted)', fontSize: 11, maxWidth: 110 }}
+              style={{ color: 'var(--text-muted)', fontSize: 10, maxWidth: 120, opacity: 0.75 }}
             >
-              #{conversation.branch_name}
+              {workspaceName}
             </span>
           )}
           <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 'auto' }}>
