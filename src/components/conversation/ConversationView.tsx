@@ -21,7 +21,7 @@ function truncatePath(p: string): string {
 }
 
 export function ConversationView({ conversationId }: Props) {
-  const [mode, setMode] = useState<'history' | 'terminal'>('history');
+  const [mode, setMode] = useState<'history' | 'terminal'>('terminal');
   const { data: messages = [], isLoading } = useMessages(conversationId);
 
   const { data: conv } = useQuery({

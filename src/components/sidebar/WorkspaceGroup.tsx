@@ -53,7 +53,6 @@ export function WorkspaceGroup({ workspace, conversations, searchQuery }: Props)
         <ConversationItem
           key={conv.id}
           conversation={conv}
-          workspacePath={workspace.root_path}
           selected={selectedId === conv.id}
           onClick={() => select(conv.id)}
         />

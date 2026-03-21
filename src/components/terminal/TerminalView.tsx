@@ -83,14 +83,16 @@ export function TerminalView({ sessionId, cwd, command }: Props) {
       api.ptyResize(sessionId, rows, cols);
     });
 
-    // Handle window resize
-    const handleWindowResize = () => fitAddon.fit();
-    window.addEventListener('resize', handleWindowResize);
+    // Use ResizeObserver so the terminal fills the container on mount and on resize
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(() => fitAddon.fit());
+    });
+    ro.observe(containerRef.current);
 
     return () => {
+      ro.disconnect();
       dataDisposable.dispose();
       resizeDisposable.dispose();
-      window.removeEventListener('resize', handleWindowResize);
       unlistenOutput.then((fn) => fn());
       unlistenExit.then((fn) => fn());
       term.dispose();
