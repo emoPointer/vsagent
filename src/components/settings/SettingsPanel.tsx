@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useSettingsStore, Theme, FontSize } from '../../features/settings/settingsStore';
+import { useSettingsStore, Theme, FontSize, FONT_OPTIONS } from '../../features/settings/settingsStore';
 
 interface Props {
   onClose: () => void;
@@ -8,7 +8,7 @@ interface Props {
 const FONT_SIZES: FontSize[] = [12, 13, 14, 15, 16];
 
 export function SettingsPanel({ onClose }: Props) {
-  const { theme, fontSize, setTheme, setFontSize } = useSettingsStore();
+  const { theme, fontSize, fontId, setTheme, setFontSize, setFontId } = useSettingsStore();
 
   return createPortal(
     <div
@@ -26,7 +26,7 @@ export function SettingsPanel({ onClose }: Props) {
           border: '1px solid var(--border)',
           borderRadius: 10,
           padding: '24px 28px',
-          minWidth: 340,
+          minWidth: 380,
           boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
         }}
       >
@@ -54,6 +54,44 @@ export function SettingsPanel({ onClose }: Props) {
                 onClick={() => setTheme(t)}
                 preview={t}
               />
+            ))}
+          </div>
+        </Section>
+
+        {/* Font family */}
+        <Section label="终端字体">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {FONT_OPTIONS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFontId(f.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '7px 10px',
+                  borderRadius: 6,
+                  border: `1px solid ${fontId === f.id ? 'var(--accent)' : 'var(--border)'}`,
+                  background: fontId === f.id ? 'rgba(59,130,246,0.12)' : 'transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{
+                  fontFamily: f.family,
+                  fontSize: 12,
+                  color: fontId === f.id ? 'var(--accent)' : 'var(--text-primary)',
+                  fontWeight: fontId === f.id ? 600 : 400,
+                }}>
+                  {f.label}
+                </span>
+                <span style={{
+                  fontFamily: f.family,
+                  fontSize: 10,
+                  color: 'var(--text-muted)',
+                  opacity: 0.6,
+                }}>
+                  AaBb 01if
+                </span>
+              </button>
             ))}
           </div>
         </Section>

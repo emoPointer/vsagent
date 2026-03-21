@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { listen } from '@tauri-apps/api/event';
 import { api } from '../../lib/tauri';
-import { useSettingsStore } from '../../features/settings/settingsStore';
+import { useSettingsStore, FONT_OPTIONS } from '../../features/settings/settingsStore';
 import '@xterm/xterm/css/xterm.css';
 
 interface Props {
@@ -53,7 +53,8 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const { theme, fontSize } = useSettingsStore();
+  const { theme, fontSize, fontId } = useSettingsStore();
+  const fontFamily = FONT_OPTIONS.find((f) => f.id === fontId)?.family ?? "'Geist Mono', monospace";
   const [imagePath, setImagePath] = useState<string | null>(null);
 
   // Save an image file and show the path chip
@@ -80,7 +81,7 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
 
     const term = new Terminal({
       theme: theme === 'light' ? LIGHT_THEME : DARK_THEME,
-      fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+      fontFamily,
       fontSize,
       lineHeight: 1.5,
       cursorBlink: true,
@@ -236,8 +237,9 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
     if (!term) return;
     term.options.theme = theme === 'light' ? LIGHT_THEME : DARK_THEME;
     term.options.fontSize = fontSize;
+    term.options.fontFamily = fontFamily;
     fitAddonRef.current?.fit();
-  }, [theme, fontSize]);
+  }, [theme, fontSize, fontFamily]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
