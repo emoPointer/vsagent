@@ -1,12 +1,15 @@
 import { useMemo } from 'react';
-import { SearchBar } from './SearchBar';
 import { WorkspaceGroup } from './WorkspaceGroup';
 import { SearchResultItem } from './SearchResultItem';
 import { useConversations, useWorkspaces } from '../../features/conversations/useConversations';
-import { useSearch } from '../../features/search/useSearch';
+import { useSearchResults } from '../../features/search/useSearch';
 
-export function SidebarContent() {
-  const { query, setQuery, results, isLoading: searchLoading } = useSearch();
+interface Props {
+  searchQuery: string;
+}
+
+export function SidebarContent({ searchQuery }: Props) {
+  const { results, isLoading: searchLoading } = useSearchResults(searchQuery);
   const { data: workspaces = [] } = useWorkspaces();
   const { data: conversations = [], isLoading } = useConversations();
 
@@ -23,14 +26,8 @@ export function SidebarContent() {
   }, [conversations]);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-3 py-2 text-sm font-semibold" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-        vsagent
-      </div>
-      <SearchBar value={query} onChange={setQuery} />
-
-      {query.length >= 2 ? (
+    <div className="flex flex-col h-full" style={{ paddingTop: '8px' }}>
+      {searchQuery.length >= 2 ? (
         <div className="flex-1 overflow-y-auto">
           {searchLoading && (
             <p className="px-3 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Searching...</p>
@@ -43,19 +40,13 @@ export function SidebarContent() {
           ))}
         </div>
       ) : (
-        /* Conversation list */
         <div className="flex-1 overflow-y-auto">
           {isLoading && (
             <p className="px-3 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Loading...</p>
           )}
           {!isLoading && conversations.length === 0 && (
             <div className="px-3 py-6 text-center">
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                No Claude Code sessions found.
-              </p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                Start a session with Claude Code to see history here.
-              </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No Claude Code sessions found.</p>
             </div>
           )}
           {workspaces.map((ws) => (
@@ -63,7 +54,7 @@ export function SidebarContent() {
               key={ws.id}
               workspace={ws}
               conversations={grouped.get(ws.id) ?? []}
-              searchQuery={query}
+              searchQuery={searchQuery}
             />
           ))}
         </div>
