@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/tauri';
 import { Conversation } from '../../types';
@@ -40,7 +41,7 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
     if (e.key === 'Escape') onClose();
   };
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
@@ -146,6 +147,7 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
