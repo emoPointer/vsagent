@@ -18,9 +18,16 @@ const queryClient = new QueryClient({
 
 function TitleBar({ searchQuery, onSearch, onSettings }: { searchQuery: string; onSearch: (q: string) => void; onSettings: () => void }) {
   const win = getCurrentWindow();
+  const handleDragMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('input, button, a')) {
+      win.startDragging();
+    }
+  };
   return (
     <div
       data-tauri-drag-region
+      onMouseDown={handleDragMouseDown}
       style={{
         height: TITLEBAR_H,
         display: 'flex',
@@ -32,21 +39,23 @@ function TitleBar({ searchQuery, onSearch, onSettings }: { searchQuery: string; 
         gap: 0,
       }}
     >
-      {/* Left: app name */}
-      <div data-tauri-drag-region style={{ paddingLeft: 14, paddingRight: 12, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace', flexShrink: 0 }}>
+      {/* Left: app name — draggable */}
+      <div data-tauri-drag-region style={{ paddingLeft: 14, paddingRight: 12, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace', flexShrink: 0, minWidth: 80 }}>
         vsagent
       </div>
 
-      {/* Center: search box — must opt out of drag region */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      {/* Center drag spacer */}
+      <div data-tauri-drag-region style={{ flex: 1 }} />
+
+      {/* Search box — fixed width, centered, opts out of drag */}
+      <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <input
           type="text"
           placeholder="Search conversations and messages..."
           value={searchQuery}
           onChange={(e) => onSearch(e.target.value)}
           style={{
-            width: '100%',
-            maxWidth: 480,
+            width: 360,
             height: 22,
             background: 'var(--bg-panel)',
             border: '1px solid var(--border)',
@@ -61,6 +70,9 @@ function TitleBar({ searchQuery, onSearch, onSettings }: { searchQuery: string; 
           onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
         />
       </div>
+
+      {/* Right drag spacer */}
+      <div data-tauri-drag-region style={{ flex: 1 }} />
 
       {/* Right: settings + window controls — must opt out of drag region */}
       <div style={{ display: 'flex', alignItems: 'center', paddingRight: 4, gap: 0, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
