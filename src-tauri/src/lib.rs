@@ -40,6 +40,7 @@ pub fn run() {
             commands::pty::pty_resize,
             commands::pty::pty_kill,
             commands::files::save_temp_image,
+            commands::files::read_clipboard_image,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

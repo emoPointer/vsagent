@@ -49,4 +49,7 @@ export const api = {
 
   saveTempImage: (data: number[], ext: string) =>
     invoke<string>('save_temp_image', { data, ext }),
+
+  readClipboardImage: () =>
+    invoke<string>('read_clipboard_image'),
 };

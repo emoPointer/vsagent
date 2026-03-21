@@ -142,7 +142,17 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
       if (file && file.type.startsWith('image/')) handleImageFile(file);
     };
 
+    // Ctrl+V: try reading image from native clipboard first (Linux workaround)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && !e.shiftKey && e.key === 'v') {
+        api.readClipboardImage().then((path) => {
+          if (!disposed) setImagePath(path);
+        }).catch(() => { /* text paste — let xterm handle it */ });
+      }
+    };
+
     const el = containerRef.current;
+    el.addEventListener('keydown', onKeyDown);
     el.addEventListener('paste', onPaste as EventListener, true); // capture phase
     el.addEventListener('dragover', onDragOver as EventListener);
     el.addEventListener('drop', onDrop as EventListener);
@@ -199,6 +209,7 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
         textarea.removeEventListener('compositionstart', onCompositionStart);
         textarea.removeEventListener('compositionend', onCompositionEnd);
       }
+      el.removeEventListener('keydown', onKeyDown);
       el.removeEventListener('paste', onPaste as EventListener, true);
       el.removeEventListener('dragover', onDragOver as EventListener);
       el.removeEventListener('drop', onDrop as EventListener);
