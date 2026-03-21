@@ -142,8 +142,17 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
       if (file && file.type.startsWith('image/')) handleImageFile(file);
     };
 
+    // Ctrl+Shift+C: copy selection via native clipboard (Linux WebView workaround)
     // Ctrl+V: try reading image from native clipboard first (Linux workaround)
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        const selection = term.getSelection();
+        if (selection) {
+          e.preventDefault();
+          api.writeClipboardText(selection).catch(() => {});
+        }
+        return;
+      }
       if (e.ctrlKey && !e.shiftKey && e.key === 'v') {
         api.readClipboardImage().then((path) => {
           if (!disposed) setImagePath(path);

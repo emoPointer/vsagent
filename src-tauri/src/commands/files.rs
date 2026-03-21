@@ -59,6 +59,36 @@ pub fn read_clipboard_image() -> Result<String, String> {
     Ok(path.to_string_lossy().to_string())
 }
 
+/// Write text to the system clipboard using native CLI tools.
+/// On Wayland uses `wl-copy`; on X11 uses `xclip -selection clipboard`.
+#[command]
+pub fn write_clipboard_text(text: String) -> Result<(), String> {
+    use std::io::Write as _;
+
+    let is_wayland = std::env::var("WAYLAND_DISPLAY")
+        .map(|v| !v.is_empty())
+        .unwrap_or(false);
+
+    let mut child = if is_wayland {
+        Command::new("wl-copy")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("wl-copy not available: {e}"))?
+    } else {
+        Command::new("xclip")
+            .args(["-selection", "clipboard"])
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("xclip not available: {e}"))?
+    };
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
+    }
+    child.wait().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn sanitize_ext(ext: &str) -> &str {
     match ext.to_ascii_lowercase().as_str() {
         "jpg" | "jpeg" => "jpg",

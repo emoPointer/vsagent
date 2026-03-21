@@ -52,4 +52,7 @@ export const api = {
 
   readClipboardImage: () =>
     invoke<string>('read_clipboard_image'),
+
+  writeClipboardText: (text: string) =>
+    invoke<void>('write_clipboard_text', { text }),
 };
