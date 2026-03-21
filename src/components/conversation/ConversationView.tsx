@@ -17,9 +17,9 @@ export function ConversationView({ conversationId }: Props) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-2 flex items-center gap-3 flex-shrink-0"
-        style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+        style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-primary)', fontFamily: 'monospace' }}>
         <div className="flex-1 min-w-0">
-          <h1 className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>
             {conv?.title ?? conversationId.slice(0, 8)}
           </h1>
           {conv?.branch_name && (
@@ -28,8 +28,8 @@ export function ConversationView({ conversationId }: Props) {
             </p>
           )}
         </div>
-        <span className="text-xs px-2 py-0.5 rounded"
-          style={{ background: 'var(--bg-panel)', color: 'var(--text-muted)' }}>
+        <span className="text-xs"
+          style={{ color: 'var(--text-muted)' }}>
           {conv?.provider ?? 'claude_code'}
         </span>
       </div>

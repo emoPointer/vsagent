@@ -3,32 +3,49 @@ import { ToolUseBlock as ToolUseBlockType } from '../../../lib/contentBlocks';
 
 interface Props { block: ToolUseBlockType; }
 
+function getArgPreview(input: unknown): string {
+  if (!input || typeof input !== 'object') return '';
+  const obj = input as Record<string, unknown>;
+  const first = Object.values(obj)[0];
+  if (typeof first === 'string') return first.slice(0, 60).replace(/\n/g, ' ');
+  return '';
+}
+
 export function ToolUseBlock({ block }: Props) {
   const [expanded, setExpanded] = useState(false);
   const inputStr = JSON.stringify(block.input, null, 2);
+  const preview = getArgPreview(block.input);
 
   return (
-    <div className="rounded my-1.5" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+    <div className="my-0.5">
       <button
-        className="w-full text-left px-3 py-1.5 flex items-center gap-2"
+        className="w-full text-left flex items-baseline gap-2 py-0.5"
         onClick={() => setExpanded((e) => !e)}
+        style={{ cursor: 'pointer' }}
       >
-        <span style={{ color: '#f59e0b', fontSize: '11px' }}>▶</span>
-        <span className="font-mono text-xs font-semibold" style={{ color: '#f59e0b' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '12px', flexShrink: 0 }}>●</span>
+        <span style={{ color: 'var(--tool-name)', fontSize: '12px', flexShrink: 0 }}>
           {block.name}
         </span>
-        {!expanded && (
-          <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }}>
-            {inputStr.slice(0, 80).replace(/\n/g, ' ')}
+        {!expanded && preview && (
+          <span className="truncate" style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+            {preview}
           </span>
         )}
-        <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>
-          {expanded ? '▴' : '▾'}
-        </span>
       </button>
       {expanded && (
-        <pre className="px-3 pb-2 text-xs overflow-x-auto"
-          style={{ color: '#86efac', fontFamily: 'monospace', margin: 0 }}>
+        <pre style={{
+          margin: '2px 0 4px 18px',
+          padding: '6px 10px',
+          background: 'var(--bg-panel)',
+          border: '1px solid var(--border)',
+          borderRadius: 3,
+          fontSize: '11px',
+          color: '#86efac',
+          fontFamily: 'inherit',
+          overflow: 'auto',
+          maxHeight: '200px',
+        }}>
           {inputStr}
         </pre>
       )}

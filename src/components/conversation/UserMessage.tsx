@@ -1,5 +1,4 @@
 import { Message } from '../../types';
-import { timeAgo } from '../../lib/utils';
 import { parseBlocks, isToolResultMessage } from '../../lib/contentBlocks';
 import { BlockList } from './blocks/BlockList';
 
@@ -9,27 +8,20 @@ export function UserMessage({ message }: Props) {
   const blocks = parseBlocks(message.content_json);
   const isToolOutput = isToolResultMessage(blocks);
 
-  // Tool output messages: no "You" label, render output blocks directly
+  // Tool result messages: render output inline, no user label
   if (isToolOutput) {
     return (
-      <div className="py-1.5">
+      <div className="py-1">
         <BlockList blocks={blocks} />
       </div>
     );
   }
 
-  // Real human input message
+  // Real human input: OpenCode style — blue left border
   const text = message.content_text ?? '';
   return (
-    <div className="py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
-          style={{ background: 'var(--accent)', color: 'white' }}>You</span>
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {timeAgo(message.created_at)}
-        </span>
-      </div>
-      <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>
+    <div className="py-4" style={{ borderLeft: '2px solid var(--user-border)', paddingLeft: '16px', marginLeft: '0' }}>
+      <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-primary)', margin: 0 }}>
         {text}
       </p>
     </div>
