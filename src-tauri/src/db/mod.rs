@@ -15,7 +15,9 @@ pub fn open() -> Result<Connection> {
 
     std::fs::create_dir_all(db_path.parent().unwrap())?;
     let conn = Connection::open(&db_path)?;
-    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+    // journal_mode=WAL returns a result row; use query_row to consume it
+    conn.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()))?;
+    conn.execute_batch("PRAGMA foreign_keys=ON;")?;
     Ok(conn)
 }
 

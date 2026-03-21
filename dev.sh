@@ -4,6 +4,9 @@
 
 set -e
 
+# 确保 cargo 在 PATH 中
+export PATH="$HOME/.cargo/bin:$PATH"
+
 WEBKIT_EXTRACT=/tmp/webkit-extract
 WEBKIT_LIBS=/tmp/webkit-libs
 
