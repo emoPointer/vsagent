@@ -34,8 +34,8 @@ function TitleBar({ searchQuery, onSearch }: { searchQuery: string; onSearch: (q
         vsagent
       </div>
 
-      {/* Center: search box */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+      {/* Center: search box — must opt out of drag region */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <input
           type="text"
           placeholder="Search conversations and messages..."
@@ -59,8 +59,8 @@ function TitleBar({ searchQuery, onSearch }: { searchQuery: string; onSearch: (q
         />
       </div>
 
-      {/* Right: window controls */}
-      <div style={{ display: 'flex', alignItems: 'center', paddingRight: 4, gap: 0 }}>
+      {/* Right: window controls — must opt out of drag region */}
+      <div style={{ display: 'flex', alignItems: 'center', paddingRight: 4, gap: 0, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {[
           { label: '─', action: () => win.minimize(), hover: '#444' },
           { label: '□', action: () => win.toggleMaximize(), hover: '#444' },
@@ -73,7 +73,7 @@ function TitleBar({ searchQuery, onSearch }: { searchQuery: string; onSearch: (q
               width: 38, height: TITLEBAR_H, border: 'none', background: 'transparent',
               color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'monospace',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
+            } as React.CSSProperties}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = hover; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
           >
