@@ -4,3 +4,4 @@ pub mod messages;
 pub mod search;
 pub mod shell;
 pub mod pty;
+pub mod files;

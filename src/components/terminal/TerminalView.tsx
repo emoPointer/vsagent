@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -42,11 +42,38 @@ const LIGHT_THEME = {
   white: '#374151', brightWhite: '#1a1a1a',
 };
 
+/** Read a File/Blob and return [bytes as number[], file extension] */
+async function readImageFile(file: File): Promise<[number[], string]> {
+  const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'png';
+  const buf = await file.arrayBuffer();
+  return [Array.from(new Uint8Array(buf)), ext];
+}
+
 export function TerminalView({ sessionId, cwd, command, envText }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const { theme, fontSize } = useSettingsStore();
+  const [imagePath, setImagePath] = useState<string | null>(null);
+
+  // Save an image file and show the path chip
+  const handleImageFile = useCallback(async (file: File) => {
+    try {
+      const [data, ext] = await readImageFile(file);
+      const path = await api.saveTempImage(data, ext);
+      setImagePath(path);
+    } catch (e) {
+      console.error('Failed to save image:', e);
+    }
+  }, []);
+
+  // Insert the saved path into PTY stdin
+  const insertPath = useCallback(() => {
+    if (imagePath) {
+      api.ptyWrite(sessionId, imagePath);
+      setImagePath(null);
+    }
+  }, [sessionId, imagePath]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -64,38 +91,61 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
     const unicode11Addon = new Unicode11Addon();
     term.loadAddon(fitAddon);
     term.loadAddon(unicode11Addon);
-    unicode11Addon.activate(term);  // use Unicode 11 table for CJK double-width chars
+    unicode11Addon.activate(term);
     term.open(containerRef.current);
 
     termRef.current = term;
     fitAddonRef.current = fitAddon;
 
-    // Guard: prevent writing to this terminal instance after cleanup
     let disposed = false;
 
-    // Fix xterm.js IME accumulation bug:
-    // After each IME composition (e.g. Chinese input), xterm.js leaves the
-    // hidden textarea's value intact. On the next composition, it diffs
-    // textarea.value against "" (its starting point for the new composition),
-    // so the residual text from the previous composition is included in onData,
-    // causing accumulated duplicates (2 copies → 3 copies → ...) with each cycle.
-    // Fix: clear the textarea after xterm.js has finished processing compositionend
-    // and the subsequent input event (setTimeout lets both handlers run first).
+    // IME accumulation fix
     let isComposing = false;
     const textarea = containerRef.current.querySelector<HTMLTextAreaElement>('.xterm-helper-textarea');
     const onCompositionStart = () => { isComposing = true; };
     const onCompositionEnd = () => {
       isComposing = false;
       setTimeout(() => {
-        if (!disposed && !isComposing && textarea) {
-          textarea.value = '';
-        }
+        if (!disposed && !isComposing && textarea) textarea.value = '';
       }, 0);
     };
     if (textarea) {
       textarea.addEventListener('compositionstart', onCompositionStart);
       textarea.addEventListener('compositionend', onCompositionEnd);
     }
+
+    // Paste: intercept image items before xterm handles the event
+    const onPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          e.stopPropagation();
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) handleImageFile(file);
+          return;
+        }
+      }
+    };
+
+    // Drag-and-drop image files onto the terminal
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer?.files[0];
+      if (file && file.type.startsWith('image/')) handleImageFile(file);
+    };
+
+    const el = containerRef.current;
+    el.addEventListener('paste', onPaste as EventListener, true); // capture phase
+    el.addEventListener('dragover', onDragOver as EventListener);
+    el.addEventListener('drop', onDrop as EventListener);
 
     // Pipe PTY output to xterm
     const unlistenOutput = listen<string>(`pty:output:${sessionId}`, (event) => {
@@ -107,19 +157,15 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
       if (!disposed) term.writeln('\r\n\x1b[2m[session ended]\x1b[0m');
     });
 
-    // Pipe keyboard input to PTY
     const dataDisposable = term.onData((data) => {
       if (!disposed) api.ptyWrite(sessionId, data);
     });
 
-    // Resize PTY on terminal resize (only after PTY is created)
     let ptyReady = false;
     const resizeDisposable = term.onResize(({ rows, cols }) => {
       if (ptyReady && !disposed) api.ptyResize(sessionId, rows, cols);
     });
 
-    // Use ResizeObserver so the terminal fills the container on mount and on resize.
-    // Guard against calling fit() when the container is hidden (display:none → size 0).
     const ro = new ResizeObserver(() => {
       if (disposed) return;
       const el = containerRef.current;
@@ -129,8 +175,6 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
     });
     ro.observe(containerRef.current);
 
-    // Fit first to get actual dims, then launch PTY at the correct size
-    // Track RAF ids so we can cancel them in cleanup (prevents double PTY creation)
     let raf2 = 0;
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
@@ -155,6 +199,9 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
         textarea.removeEventListener('compositionstart', onCompositionStart);
         textarea.removeEventListener('compositionend', onCompositionEnd);
       }
+      el.removeEventListener('paste', onPaste as EventListener, true);
+      el.removeEventListener('dragover', onDragOver as EventListener);
+      el.removeEventListener('drop', onDrop as EventListener);
       unlistenOutput.then((fn) => fn());
       unlistenExit.then((fn) => fn());
       term.dispose();
@@ -163,7 +210,7 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // Dynamically update terminal theme and font size without recreating
+  // Dynamically update theme / font size
   useEffect(() => {
     const term = termRef.current;
     if (!term) return;
@@ -173,9 +220,50 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
   }, [theme, fontSize]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: '100%', height: '100%', padding: '4px', boxSizing: 'border-box', overflow: 'hidden' }}
-    />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div
+        ref={containerRef}
+        style={{ width: '100%', height: '100%', padding: '4px', boxSizing: 'border-box', overflow: 'hidden' }}
+      />
+
+      {/* Image path chip */}
+      {imagePath && (
+        <div style={{
+          position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+          borderRadius: 6, padding: '6px 10px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          maxWidth: '80%',
+          zIndex: 10,
+        }}>
+          <span style={{ fontSize: 14 }}>🖼</span>
+          <span style={{
+            fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320,
+          }}>
+            {imagePath}
+          </span>
+          <button
+            onClick={insertPath}
+            style={{
+              padding: '2px 10px', fontSize: 11, borderRadius: 4, border: 'none',
+              background: 'var(--accent)', color: '#fff', cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            插入路径
+          </button>
+          <button
+            onClick={() => setImagePath(null)}
+            style={{
+              padding: '2px 6px', fontSize: 11, borderRadius: 4, border: 'none',
+              background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

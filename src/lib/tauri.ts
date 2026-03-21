@@ -46,4 +46,7 @@ export const api = {
 
   ptyKill: (sessionId: string) =>
     invoke<void>('pty_kill', { sessionId }),
+
+  saveTempImage: (data: number[], ext: string) =>
+    invoke<string>('save_temp_image', { data, ext }),
 };

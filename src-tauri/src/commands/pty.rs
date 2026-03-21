@@ -13,7 +13,15 @@ fn parse_env_text(text: &str) -> Vec<(String, String)> {
             let (k, v) = line.split_once('=')?;
             let k = k.trim().to_string();
             if k.is_empty() { return None; }
-            Some((k, v.trim().to_string()))
+            // Strip surrounding quotes from value (standard .env behavior)
+            let v = v.trim();
+            let v = if (v.starts_with('"') && v.ends_with('"'))
+                    || (v.starts_with('\'') && v.ends_with('\'')) {
+                &v[1..v.len()-1]
+            } else {
+                v
+            };
+            Some((k, v.to_string()))
         })
         .collect()
 }
