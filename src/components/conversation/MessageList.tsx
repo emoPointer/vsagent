@@ -11,7 +11,7 @@ export function MessageList({ messages }: Props) {
   const virtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 120,
+    estimateSize: () => 200,
     overscan: 5,
   });
 
