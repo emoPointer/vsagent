@@ -67,20 +67,6 @@ export function ConversationView({ conversationId }: Props) {
             {stats.toolCalls > 0 && <span>{stats.toolCalls} tools</span>}
             {stats.totalTokens > 0 && <span>{(stats.totalTokens / 1000).toFixed(1)}k tok</span>}
             {conv?.last_message_at && <span>{formatDate(conv.last_message_at)}</span>}
-            {workspace && (
-              <button
-                title={`Open terminal in ${workspace.root_path}`}
-                onClick={() => api.openInTerminal(workspace.root_path)}
-                style={{
-                  background: 'none', border: '1px solid var(--border)', borderRadius: 3,
-                  color: 'var(--text-muted)', fontSize: 11, padding: '1px 7px', cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-              >
-                $ terminal
-              </button>
-            )}
           </div>
         </div>
       </div>

@@ -53,6 +53,14 @@ body {
 .prose h1, .prose h2, .prose h3 { margin: 10px 0 4px 0; color: var(--text-primary); }
 .prose a { color: var(--accent); }
 
+/* Tables */
+.prose table { border-collapse: collapse; margin: 8px 0; font-size: 12px; width: 100%; }
+.prose thead tr { background: var(--bg-panel); }
+.prose th, .prose td { padding: 4px 10px; border: 1px solid var(--border); text-align: left; }
+.prose th { color: var(--text-primary); font-weight: 600; }
+.prose td { color: var(--text-muted); }
+.prose tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
 /* highlight.js — override background to match theme */
 .hljs { background: var(--bg-panel) !important; }
 

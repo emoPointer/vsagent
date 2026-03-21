@@ -20,6 +20,6 @@ export const api = {
   searchMessages: (query: string) =>
     invoke<SearchResult[]>('search_messages', { query }),
 
-  openInTerminal: (path: string) =>
-    invoke<void>('open_in_terminal', { path }),
+  openInTerminal: (path: string, command?: string) =>
+    invoke<void>('open_in_terminal', { path, command: command ?? null }),
 };

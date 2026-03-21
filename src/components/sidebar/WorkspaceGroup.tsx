@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Conversation, Workspace } from '../../types';
 import { ConversationItem } from './ConversationItem';
 import { useConversationStore } from '../../features/conversations/conversationStore';
+import { api } from '../../lib/tauri';
 
 interface Props {
   workspace: Workspace;
@@ -27,19 +28,32 @@ export function WorkspaceGroup({ workspace, conversations, searchQuery }: Props)
 
   return (
     <div>
-      <button
-        className="w-full px-3 py-1.5 text-left flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide"
-        style={{ color: 'var(--text-muted)' }}
-        onClick={() => setExpanded((e) => !e)}
-      >
-        <span>{expanded ? '▾' : '▸'}</span>
-        <span className="truncate">{workspace.name}</span>
-        <span className="ml-auto">{filtered.length}</span>
-      </button>
+      <div className="flex items-center">
+        <button
+          className="flex-1 px-3 py-1.5 text-left flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide"
+          style={{ color: 'var(--text-muted)' }}
+          onClick={() => setExpanded((e) => !e)}
+        >
+          <span>{expanded ? '▾' : '▸'}</span>
+          <span className="truncate">{workspace.name}</span>
+          <span className="ml-auto mr-2">{filtered.length}</span>
+        </button>
+        <button
+          title={`New session in ${workspace.root_path}`}
+          onClick={() => api.openInTerminal(workspace.root_path)}
+          className="px-2 py-1.5 text-xs"
+          style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+        >
+          +
+        </button>
+      </div>
       {expanded && filtered.map((conv) => (
         <ConversationItem
           key={conv.id}
           conversation={conv}
+          workspacePath={workspace.root_path}
           selected={selectedId === conv.id}
           onClick={() => select(conv.id)}
         />
