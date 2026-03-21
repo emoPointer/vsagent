@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 :root {
   --bg-primary: #0d0d0d;
   --bg-secondary: #111111;
@@ -51,6 +52,9 @@ body {
 .prose ul, .prose ol { margin: 0 0 6px 0; padding-left: 18px; }
 .prose h1, .prose h2, .prose h3 { margin: 10px 0 4px 0; color: var(--text-primary); }
 .prose a { color: var(--accent); }
+
+/* highlight.js — override background to match theme */
+.hljs { background: var(--bg-panel) !important; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }

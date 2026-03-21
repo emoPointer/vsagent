@@ -9,9 +9,18 @@ interface Props {
 }
 
 export function SidebarContent({ searchQuery }: Props) {
-  const { results, isLoading: searchLoading } = useSearchResults(searchQuery);
+  const { results: rawResults, isLoading: searchLoading } = useSearchResults(searchQuery);
   const { data: workspaces = [] } = useWorkspaces();
   const { data: conversations = [], isLoading } = useConversations();
+
+  const results = useMemo(() => {
+    const seen = new Set<string>();
+    return rawResults.filter((r) => {
+      if (seen.has(r.conversation_id)) return false;
+      seen.add(r.conversation_id);
+      return true;
+    });
+  }, [rawResults]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof conversations>();

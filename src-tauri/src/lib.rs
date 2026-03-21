@@ -28,6 +28,7 @@ pub fn run() {
             commands::conversations::archive_conversation,
             commands::messages::list_messages,
             commands::search::search_messages,
+            commands::shell::open_in_terminal,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

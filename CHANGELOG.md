@@ -1,3 +1,20 @@
+## [0.2.0] - 2026-03-21
+
+### Features
+- Syntax highlighting in code blocks (rehype-highlight + highlight.js github-dark theme)
+- Enhanced conversation header: workspace path, branch, message count, tool call count, token total, date
+- "$ terminal" button opens a terminal emulator in the workspace directory
+- Search result deduplication: each conversation appears only once in search results
+
+### Design Rationale
+- highlight.js CSS imported from JS entry point to avoid PostCSS @import ordering issues
+- Terminal opener tries gnome-terminal → konsole → xfce4-terminal → xterm in order
+- Token/tool stats computed client-side from messages array to avoid extra DB query
+
+### Notes & Caveats
+- Terminal button silently fails if no supported terminal emulator is installed
+- stats.toolCalls counts messages containing tool_use blocks, not individual tool invocations
+
 ## [0.1.0] - 2026-03-21
 
 ### Features
