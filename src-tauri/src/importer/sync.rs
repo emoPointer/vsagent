@@ -80,6 +80,8 @@ pub fn import_file(conn: &Connection, jsonl_path: &Path) -> Result<()> {
     let mut first_ts: Option<i64> = None;
     let mut last_ts: Option<i64> = None;
     let mut first_user_text: Option<String> = None;
+    // Claude Code generated title — takes priority over first_user_text
+    let mut custom_title: Option<String> = None;
 
     // Collect all parsed lines first to determine seq offsets
     let mut parsed_lines = Vec::new();
@@ -96,6 +98,10 @@ pub fn import_file(conn: &Connection, jsonl_path: &Path) -> Result<()> {
             if let Some(ts) = parsed.timestamp_ms {
                 if first_ts.is_none() { first_ts = Some(ts); }
                 last_ts = Some(ts);
+            }
+            // Keep the latest custom-title (Claude Code appends new ones as session evolves)
+            if let Some(ref t) = parsed.custom_title {
+                custom_title = Some(t.clone());
             }
             parsed_lines.push(parsed);
         }
@@ -172,8 +178,15 @@ pub fn import_file(conn: &Connection, jsonl_path: &Path) -> Result<()> {
     }
     conn.execute("COMMIT", [])?;
 
-    // Update title if we found one
-    if let Some(title) = first_user_text {
+    // custom-title takes priority; fallback to first user message snippet
+    // Always overwrite with custom_title (Claude Code may update it); only set
+    // first_user_text when title is still NULL (never overwrite manual renames).
+    if let Some(title) = custom_title {
+        conn.execute(
+            "UPDATE conversations SET title=?1 WHERE id=?2",
+            rusqlite::params![title, session_id],
+        )?;
+    } else if let Some(title) = first_user_text {
         conn.execute(
             "UPDATE conversations SET title=?1 WHERE id=?2 AND title IS NULL",
             rusqlite::params![title, session_id],
@@ -207,6 +220,7 @@ mod tests {
 
     const LINE_U: &str = r#"{"uuid":"u1","parentUuid":null,"type":"user","sessionId":"sess1","cwd":"/tmp/proj","gitBranch":"main","timestamp":"2026-01-01T00:00:00Z","isSidechain":false,"message":{"role":"user","content":"Hello"}}"#;
     const LINE_A: &str = r#"{"uuid":"a1","parentUuid":"u1","type":"assistant","sessionId":"sess1","cwd":"/tmp/proj","gitBranch":"main","timestamp":"2026-01-01T00:00:01Z","isSidechain":false,"message":{"role":"assistant","content":[{"type":"text","text":"Hi there"}]}}"#;
+    const LINE_TITLE: &str = r#"{"type":"custom-title","customTitle":"Fix clippy warnings in parser","sessionId":"sess1"}"#;
 
     #[test]
     fn import_file_creates_conversation_and_messages() {
@@ -238,6 +252,18 @@ mod tests {
 
         let msgs = message::list(&conn, "sess1").unwrap();
         assert_eq!(msgs.len(), 2); // no duplicates
+    }
+
+    #[test]
+    fn custom_title_takes_priority_over_first_user_text() {
+        let conn = setup();
+        let dir = tempdir().unwrap();
+        let path = write_jsonl(dir.path(), "test.jsonl", &[LINE_U, LINE_A, LINE_TITLE]);
+
+        import_file(&conn, &path).unwrap();
+
+        let convs = conversation::list(&conn, None).unwrap();
+        assert_eq!(convs[0].title.as_deref(), Some("Fix clippy warnings in parser"));
     }
 
     #[test]

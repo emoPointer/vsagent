@@ -19,6 +19,9 @@ pub struct RawLine {
     #[serde(rename = "isSidechain")]
     pub is_sidechain: Option<bool>,
     pub message: Option<RawMessage>,
+    /// Present only on custom-title entries
+    #[serde(rename = "customTitle")]
+    pub custom_title: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -41,6 +44,8 @@ pub struct ParsedLine {
     pub cwd: Option<String>,
     pub git_branch: Option<String>,
     pub timestamp_ms: Option<i64>,
+    /// Claude Code generated title (from custom-title entries)
+    pub custom_title: Option<String>,
 }
 
 /// Roles we accept as messages
@@ -109,6 +114,7 @@ pub fn parse_line(line: &str, seq: i64) -> Option<ParsedLine> {
         cwd: raw.cwd.clone(),
         git_branch: raw.git_branch.clone(),
         timestamp_ms: ts_ms,
+        custom_title: raw.custom_title.clone(),
     };
 
     // Only user/assistant/system produce messages
@@ -217,6 +223,15 @@ mod tests {
     fn corrupt_line_returns_none() {
         let result = parse_line(CORRUPT_LINE, 5);
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn parses_custom_title_entry() {
+        let line = r#"{"type":"custom-title","customTitle":"Fix clippy warnings","sessionId":"sess1"}"#;
+        let result = parse_line(line, 0).unwrap();
+        assert_eq!(result.custom_title.as_deref(), Some("Fix clippy warnings"));
+        assert_eq!(result.session_id.as_deref(), Some("sess1"));
+        assert!(result.message.is_none());
     }
 
     #[test]
