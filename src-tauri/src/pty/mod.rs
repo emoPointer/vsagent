@@ -1,12 +1,19 @@
-use portable_pty::{CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySystem};
+use portable_pty::{ChildKiller, CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySystem};
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Emitter};
 
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
+    killer: Box<dyn ChildKiller + Send + Sync>,
+    /// Set to true on kill() so the reader thread stops emitting events
+    /// immediately, even while waiting for the child process to die and
+    /// the blocking read() to return EIO. This prevents "zombie" event
+    /// emissions in the window between kill() and thread exit.
+    killed: Arc<AtomicBool>,
 }
 
 pub struct PtyManager {
@@ -27,6 +34,8 @@ impl PtyManager {
         session_id: String,
         cwd: String,
         command: Option<String>,
+        rows: u16,
+        cols: u16,
     ) -> Result<(), String> {
         // Kill existing session if any
         self.kill(&session_id);
@@ -34,8 +43,8 @@ impl PtyManager {
         let pty_system = NativePtySystem::default();
         let pair = pty_system
             .openpty(PtySize {
-                rows: 24,
-                cols: 80,
+                rows,
+                cols,
                 pixel_width: 0,
                 pixel_height: 0,
             })
@@ -49,16 +58,26 @@ impl PtyManager {
         };
         cmd.args(["-c", &shell_cmd]);
         cmd.cwd(&cwd);
+        // Ensure proper terminal type and UTF-8 locale for correct CJK character width
+        cmd.env("TERM", "xterm-256color");
+        cmd.env("COLORTERM", "truecolor");
 
-        let _child = pair
+        let child = pair
             .slave
             .spawn_command(cmd)
             .map_err(|e| e.to_string())?;
+        // clone_killer gives a Send+Sync handle to kill the child later
+        let killer = child.clone_killer();
 
         let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
         let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
 
-        // Stream PTY output to frontend via Tauri events
+        let killed = Arc::new(AtomicBool::new(false));
+        let killed_clone = killed.clone();
+
+        // Stream PTY output to frontend via Tauri events.
+        // The `killed` flag lets kill() immediately silence this thread even
+        // while the blocking read() hasn't returned EIO yet.
         let sid = session_id.clone();
         std::thread::spawn(move || {
             let mut buf = [0u8; 4096];
@@ -66,18 +85,24 @@ impl PtyManager {
                 match reader.read(&mut buf) {
                     Ok(0) | Err(_) => break,
                     Ok(n) => {
-                        // Send raw bytes as base64 to avoid UTF-8 issues with ANSI sequences
+                        // Stop emitting as soon as kill() is called
+                        if killed_clone.load(Ordering::Relaxed) { break; }
                         let data = String::from_utf8_lossy(&buf[..n]).into_owned();
                         let _ = app.emit(&format!("pty:output:{sid}"), data);
                     }
                 }
             }
-            let _ = app.emit(&format!("pty:exit:{sid}"), ());
+            // Only emit exit for natural process exits, not intentional kills
+            if !killed_clone.load(Ordering::Relaxed) {
+                let _ = app.emit(&format!("pty:exit:{sid}"), ());
+            }
         });
 
         let session = PtySession {
             master: pair.master,
             writer,
+            killer,
+            killed,
         };
         self.sessions.lock().unwrap().insert(session_id, session);
         Ok(())
@@ -111,8 +136,14 @@ impl PtyManager {
 
     /// Kill and remove a PTY session.
     pub fn kill(&self, session_id: &str) {
-        self.sessions.lock().unwrap().remove(session_id);
-        // Dropping PtySession closes master fd, which sends SIGHUP to child
+        if let Some(mut session) = self.sessions.lock().unwrap().remove(session_id) {
+            // 1. Set flag first — reader thread stops emitting immediately,
+            //    even before the blocking read() returns EIO.
+            session.killed.store(true, Ordering::Relaxed);
+            // 2. Kill child process — slave fd closes → reader gets EIO → thread exits
+            let _ = session.killer.kill();
+            // 3. Dropping session closes master fd
+        }
     }
 
     /// Check if a session is alive.

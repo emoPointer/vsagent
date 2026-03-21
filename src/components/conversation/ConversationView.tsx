@@ -30,7 +30,7 @@ export function ConversationView({ conversationId }: Props) {
     select: (convs) => convs.find((c) => c.id === conversationId),
   });
 
-  const { data: workspace } = useQuery({
+  const { data: workspace, isLoading: wsLoading } = useQuery({
     queryKey: ['workspaces'],
     queryFn: () => api.listWorkspaces(),
     select: (wss) => wss.find((w) => w.id === conv?.workspace_id),
@@ -47,7 +47,7 @@ export function ConversationView({ conversationId }: Props) {
     return { totalTokens, toolCalls, msgCount: messages.length };
   }, [messages]);
 
-  const workspacePath = workspace?.root_path ?? '/tmp';
+  const workspacePath = workspace?.root_path;
 
   return (
     <div className="flex flex-col h-full">
@@ -99,18 +99,37 @@ export function ConversationView({ conversationId }: Props) {
 
       {/* Content — overflow hidden is critical for xterm fit */}
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {mode === 'terminal' ? (
-          <TerminalView
-            sessionId={conversationId}
-            cwd={workspacePath}
-            command={`claude --resume "${conversationId}"`}
-          />
-        ) : isLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading messages...</p>
+        {/* Terminal: mounted once workspace is ready, shown/hidden via CSS to avoid
+            listener accumulation that occurs when TerminalView unmounts and remounts */}
+        {workspacePath ? (
+          <div style={{
+            flex: 1, minHeight: 0, overflow: 'hidden',
+            display: mode === 'terminal' ? 'flex' : 'none',
+            flexDirection: 'column',
+          }}>
+            <TerminalView
+              sessionId={conversationId}
+              cwd={workspacePath}
+              command={`claude --resume "${conversationId}"`}
+            />
           </div>
-        ) : (
-          <MessageList messages={messages} />
+        ) : mode === 'terminal' ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {wsLoading || !conv ? '正在加载工作区...' : '无法找到工作区路径'}
+            </p>
+          </div>
+        ) : null}
+
+        {/* History: always rendered on demand */}
+        {mode === 'history' && (
+          isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading messages...</p>
+            </div>
+          ) : (
+            <MessageList messages={messages} />
+          )
         )}
       </div>
     </div>

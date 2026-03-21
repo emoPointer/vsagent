@@ -11,6 +11,7 @@ export function useWatcherEvents() {
 
     listen<{ conversation_id: string }>('conversation:updated', (e) => {
       qc.invalidateQueries({ queryKey: ['messages', e.payload.conversation_id] });
+      qc.invalidateQueries({ queryKey: ['conversations'] });
     }).then((fn) => {
       if (cancelled) { fn(); } else { unlisteners.push(fn); }
     });

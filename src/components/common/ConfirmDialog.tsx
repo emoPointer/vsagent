@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Props {
   message: string;
@@ -16,10 +17,10 @@ export function ConfirmDialog({ message, onConfirm, onCancel }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onConfirm, onCancel]);
 
-  return (
+  return createPortal(
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
+        position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(0,0,0,0.6)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
@@ -63,6 +64,7 @@ export function ConfirmDialog({ message, onConfirm, onCancel }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

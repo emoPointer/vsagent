@@ -64,7 +64,7 @@ export function ConversationItem({ conversation, selected, onClick }: Props) {
           background: selected
             ? 'rgba(59,130,246,0.18)'
             : hovered
-            ? 'rgba(255,255,255,0.06)'
+            ? 'var(--hover-bg)'
             : 'transparent',
           borderLeft: selected ? '2px solid var(--accent)' : '2px solid transparent',
           transition: 'background 0.12s',
@@ -179,7 +179,7 @@ function IconBtn({
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         width: 26, height: 26, borderRadius: 5, border: 'none',
-        background: h ? (danger ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.12)') : 'transparent',
+        background: h ? (danger ? 'rgba(239,68,68,0.25)' : 'var(--hover-bg-strong)') : 'transparent',
         color: h ? (danger ? '#ef4444' : 'var(--text-primary)') : 'var(--text-muted)',
         cursor: 'pointer',
         transition: 'all 0.1s',

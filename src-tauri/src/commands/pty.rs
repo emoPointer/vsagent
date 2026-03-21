@@ -8,8 +8,10 @@ pub fn pty_create(
     session_id: String,
     cwd: String,
     command: Option<String>,
+    rows: Option<u16>,
+    cols: Option<u16>,
 ) -> Result<(), String> {
-    state.pty_manager.create(app, session_id, cwd, command)
+    state.pty_manager.create(app, session_id, cwd, command, rows.unwrap_or(24), cols.unwrap_or(80))
 }
 
 #[command]

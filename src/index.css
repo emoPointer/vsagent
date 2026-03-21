@@ -15,6 +15,25 @@
   --tool-name: #f59e0b;
   --tool-output: #9ca3af;
   --user-border: #3b82f6;
+  --hover-bg: rgba(255,255,255,0.06);
+  --hover-bg-strong: rgba(255,255,255,0.12);
+  --font-size: 13px;
+}
+
+[data-theme='light'] {
+  --bg-primary: #f0f0f0;
+  --bg-secondary: #e4e4e4;
+  --bg-panel: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-muted: #6b7280;
+  --accent: #2563eb;
+  --border: #d1d5db;
+  --tool-bg: #f8f8f8;
+  --tool-name: #b45309;
+  --tool-output: #374151;
+  --user-border: #2563eb;
+  --hover-bg: rgba(0,0,0,0.05);
+  --hover-bg-strong: rgba(0,0,0,0.10);
 }
 
 * { box-sizing: border-box; }
@@ -23,7 +42,7 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
-  font-size: 13px;
+  font-size: var(--font-size);
   margin: 0;
   overflow: hidden;
   line-height: 1.6;
@@ -63,6 +82,30 @@ body {
 
 /* highlight.js — override background to match theme */
 .hljs { background: var(--bg-panel) !important; }
+
+/* highlight.js light theme token colors (github-light palette) */
+[data-theme='light'] .hljs { color: #24292e !important; }
+[data-theme='light'] .hljs-keyword,
+[data-theme='light'] .hljs-selector-tag { color: #d73a49 !important; }
+[data-theme='light'] .hljs-string,
+[data-theme='light'] .hljs-attr { color: #032f62 !important; }
+[data-theme='light'] .hljs-comment,
+[data-theme='light'] .hljs-quote { color: #6a737d !important; font-style: italic; }
+[data-theme='light'] .hljs-number,
+[data-theme='light'] .hljs-literal { color: #005cc5 !important; }
+[data-theme='light'] .hljs-title,
+[data-theme='light'] .hljs-function .hljs-title { color: #6f42c1 !important; }
+[data-theme='light'] .hljs-type,
+[data-theme='light'] .hljs-built_in,
+[data-theme='light'] .hljs-class .hljs-title { color: #005cc5 !important; }
+[data-theme='light'] .hljs-name,
+[data-theme='light'] .hljs-tag { color: #22863a !important; }
+[data-theme='light'] .hljs-variable,
+[data-theme='light'] .hljs-params { color: #24292e !important; }
+[data-theme='light'] .hljs-symbol,
+[data-theme='light'] .hljs-bullet { color: #e36209 !important; }
+[data-theme='light'] .hljs-addition { background: #cdffd8 !important; color: #24292e !important; }
+[data-theme='light'] .hljs-deletion { background: #ffeef0 !important; color: #24292e !important; }
 
 /* xterm.js — ensure terminal fills container */
 .xterm { height: 100% !important; }

@@ -41,7 +41,7 @@ export function ToolUseBlock({ block }: Props) {
           border: '1px solid var(--border)',
           borderRadius: 3,
           fontSize: '11px',
-          color: '#86efac',
+          color: 'var(--tool-output)',
           fontFamily: 'inherit',
           overflow: 'auto',
           maxHeight: '200px',
