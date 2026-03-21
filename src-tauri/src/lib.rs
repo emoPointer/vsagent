@@ -7,9 +7,11 @@ pub mod domain;
 pub mod importer;
 pub mod watcher;
 pub mod commands;
+pub mod pty;
 
 pub struct AppState {
     pub db: Mutex<Connection>,
+    pub pty_manager: pty::PtyManager,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,7 +19,7 @@ pub fn run() {
     env_logger::init();
     let conn = db::open().expect("failed to open database");
     db::migrations::run(&conn).expect("failed to run migrations");
-    let state = AppState { db: Mutex::new(conn) };
+    let state = AppState { db: Mutex::new(conn), pty_manager: pty::PtyManager::new() };
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(state)
@@ -29,6 +31,10 @@ pub fn run() {
             commands::messages::list_messages,
             commands::search::search_messages,
             commands::shell::open_in_terminal,
+            commands::pty::pty_create,
+            commands::pty::pty_write,
+            commands::pty::pty_resize,
+            commands::pty::pty_kill,
         ])
         .setup(|app| {
             let handle = app.handle().clone();

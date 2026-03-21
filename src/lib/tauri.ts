@@ -22,4 +22,16 @@ export const api = {
 
   openInTerminal: (path: string, command?: string) =>
     invoke<void>('open_in_terminal', { path, command: command ?? null }),
+
+  ptyCreate: (sessionId: string, cwd: string, command?: string) =>
+    invoke<void>('pty_create', { sessionId, cwd, command: command ?? null }),
+
+  ptyWrite: (sessionId: string, data: string) =>
+    invoke<void>('pty_write', { sessionId, data }),
+
+  ptyResize: (sessionId: string, rows: number, cols: number) =>
+    invoke<void>('pty_resize', { sessionId, rows, cols }),
+
+  ptyKill: (sessionId: string) =>
+    invoke<void>('pty_kill', { sessionId }),
 };

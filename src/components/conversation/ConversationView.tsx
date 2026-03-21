@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMessages } from '../../features/conversations/useMessages';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/tauri';
 import { MessageList } from './MessageList';
+import { TerminalView } from '../terminal/TerminalView';
 
 interface Props { conversationId: string; }
 
@@ -20,6 +21,7 @@ function truncatePath(p: string): string {
 }
 
 export function ConversationView({ conversationId }: Props) {
+  const [mode, setMode] = useState<'history' | 'terminal'>('history');
   const { data: messages = [], isLoading } = useMessages(conversationId);
 
   const { data: conv } = useQuery({
@@ -45,6 +47,8 @@ export function ConversationView({ conversationId }: Props) {
     return { totalTokens, toolCalls, msgCount: messages.length };
   }, [messages]);
 
+  const workspacePath = workspace?.root_path ?? '/tmp';
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -62,6 +66,28 @@ export function ConversationView({ conversationId }: Props) {
               </p>
             )}
           </div>
+
+          {/* Mode toggle */}
+          <div className="flex items-center gap-1 flex-shrink-0"
+            style={{ border: '1px solid var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+            {(['history', 'terminal'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                style={{
+                  padding: '2px 10px',
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  background: mode === m ? 'var(--accent)' : 'transparent',
+                  color: mode === m ? '#fff' : 'var(--text-muted)',
+                  border: 'none',
+                }}
+              >
+                {m === 'history' ? '历史' : '终端'}
+              </button>
+            ))}
+          </div>
+
           <div className="text-xs flex items-center gap-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
             {stats.msgCount > 0 && <span>{stats.msgCount} msgs</span>}
             {stats.toolCalls > 0 && <span>{stats.toolCalls} tools</span>}
@@ -71,14 +97,22 @@ export function ConversationView({ conversationId }: Props) {
         </div>
       </div>
 
-      {/* Messages */}
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading messages...</p>
-        </div>
-      ) : (
-        <MessageList messages={messages} />
-      )}
+      {/* Content */}
+      <div className="flex-1 min-h-0">
+        {mode === 'terminal' ? (
+          <TerminalView
+            sessionId={conversationId}
+            cwd={workspacePath}
+            command={`claude --resume "${conversationId}"`}
+          />
+        ) : isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading messages...</p>
+          </div>
+        ) : (
+          <MessageList messages={messages} />
+        )}
+      </div>
     </div>
   );
 }

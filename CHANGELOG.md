@@ -1,3 +1,25 @@
+## [0.3.0] - 2026-03-21
+
+### Features
+- Embedded PTY terminal in main panel (portable-pty + xterm.js)
+- Conversation view has [历史 | 终端] toggle in header
+- Clicking "终端" tab spawns PTY with `claude --resume <session_id>` in workspace directory
+- Terminal supports full ANSI rendering, cursorBlink, color scheme matching app theme
+- WorkspaceGroup "+" button opens terminal in workspace directory for new sessions
+- ConversationItem hover shows "▶" to resume in external terminal (fallback)
+- Ctrl+C behavior (double to exit claude) is native Claude Code behavior, no special handling needed
+
+### Design Rationale
+- portable-pty chosen over tauri-plugin-shell for true PTY (vs pipe): supports ANSI, resize, raw mode
+- xterm.js used for terminal rendering (same as VS Code terminal)
+- PTY sessions keyed by conversation_id; session killed on component unmount
+- PTY output streamed via Tauri events `pty:output:<session_id>`
+
+### Notes & Caveats
+- PTY session is fresh each time the terminal tab is opened (no persistence of terminal state)
+- Claude Code's `--resume` flag requires `claude` to be in PATH
+- If workspace path is not found, PTY falls back to /tmp
+
 ## [0.2.0] - 2026-03-21
 
 ### Features
