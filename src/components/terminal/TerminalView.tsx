@@ -53,7 +53,8 @@ export function TerminalView({ sessionId, cwd, command }: Props) {
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(containerRef.current);
-    fitAddon.fit();
+    // Double RAF: first lets xterm insert its DOM; second waits for flex layout pass
+    requestAnimationFrame(() => requestAnimationFrame(() => fitAddon.fit()));
 
     termRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -104,7 +105,7 @@ export function TerminalView({ sessionId, cwd, command }: Props) {
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', padding: '4px' }}
+      style={{ width: '100%', height: '100%', padding: '4px', boxSizing: 'border-box', overflow: 'hidden' }}
     />
   );
 }

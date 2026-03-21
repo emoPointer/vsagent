@@ -14,6 +14,12 @@ export const api = {
   archiveConversation: (id: string, archived: boolean) =>
     invoke<void>('archive_conversation', { id, archived }),
 
+  renameConversation: (id: string, title: string) =>
+    invoke<void>('rename_conversation', { id, title }),
+
+  deleteConversation: (id: string) =>
+    invoke<void>('delete_conversation', { id }),
+
   listMessages: (conversationId: string) =>
     invoke<Message[]>('list_messages', { conversationId }),
 

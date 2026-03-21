@@ -80,6 +80,20 @@ pub fn set_archived(conn: &Connection, id: &str, archived: bool) -> Result<()> {
     Ok(())
 }
 
+pub fn rename(conn: &Connection, id: &str, title: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE conversations SET title=?1, updated_at=strftime('%s','now') WHERE id=?2",
+        params![title, id],
+    )?;
+    Ok(())
+}
+
+pub fn delete(conn: &Connection, id: &str) -> Result<()> {
+    conn.execute("DELETE FROM messages WHERE conversation_id=?1", params![id])?;
+    conn.execute("DELETE FROM conversations WHERE id=?1", params![id])?;
+    Ok(())
+}
+
 pub fn exists(conn: &Connection, id: &str) -> Result<bool> {
     let count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM conversations WHERE id=?1",

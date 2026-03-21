@@ -31,3 +31,22 @@ pub fn archive_conversation(
     let conn = state.db.lock().map_err(|e| e.to_string())?;
     conversation::set_archived(&conn, &id, archived).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn rename_conversation(
+    state: State<AppState>,
+    id: String,
+    title: String,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::rename(&conn, &id, &title).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_conversation(
+    state: State<AppState>,
+    id: String,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conversation::delete(&conn, &id).map_err(|e| e.to_string())
+}

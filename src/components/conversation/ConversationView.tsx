@@ -97,8 +97,8 @@ export function ConversationView({ conversationId }: Props) {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-h-0">
+      {/* Content — overflow hidden is critical for xterm fit */}
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {mode === 'terminal' ? (
           <TerminalView
             sessionId={conversationId}

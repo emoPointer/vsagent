@@ -64,6 +64,10 @@ body {
 /* highlight.js — override background to match theme */
 .hljs { background: var(--bg-panel) !important; }
 
+/* xterm.js — ensure terminal fills container */
+.xterm { height: 100% !important; }
+.xterm-viewport { overflow-y: auto !important; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

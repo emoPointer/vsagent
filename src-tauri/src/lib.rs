@@ -28,6 +28,8 @@ pub fn run() {
             commands::conversations::list_conversations,
             commands::conversations::pin_conversation,
             commands::conversations::archive_conversation,
+            commands::conversations::rename_conversation,
+            commands::conversations::delete_conversation,
             commands::messages::list_messages,
             commands::search::search_messages,
             commands::shell::open_in_terminal,
