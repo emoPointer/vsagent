@@ -33,6 +33,7 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
     }
     await api.setConversationEnv(conversation.id, envText);
     qc.invalidateQueries({ queryKey: ['conversations'] });
+    qc.invalidateQueries({ queryKey: ['conversation-env', conversation.id] });
     setSaving(false);
     onClose();
   };
@@ -119,7 +120,7 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
             }}
           />
           <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
-            这些变量会在启动终端时自动注入，不同对话可以设置不同的值。
+            这些变量会在启动终端时注入。修改后需重启终端会话才能生效（清空内容即可取消所有变量）。
           </p>
         </div>
 
