@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { SidebarContent } from './components/sidebar/SidebarContent';
-import { ConversationView } from './components/conversation/ConversationView';
+import { MultiPanelArea } from './components/panels/MultiPanelArea';
 import { TerminalView } from './components/terminal/TerminalView';
 import { SettingsPanel } from './components/settings/SettingsPanel';
 import { useConversationStore } from './features/conversations/conversationStore';
@@ -121,9 +121,11 @@ function AppInner() {
   const [hovered, setHovered] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const selectedId = useConversationStore((s) => s.selectedId);
   const newSessionCwd = useConversationStore((s) => s.newSessionCwd);
   const newSessionId = useConversationStore((s) => s.newSessionId);
+  const panels = useConversationStore((s) => s.panels);
+  const addPanel = useConversationStore((s) => s.addPanel);
+  const [dropActive, setDropActive] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { theme, fontSize } = useSettingsStore();
   useWatcherEvents();
@@ -189,12 +191,28 @@ function AppInner() {
           </div>
         </div>
 
-        {/* Main content */}
-        <main style={{ height: '100%', overflow: 'hidden' }}>
+        {/* Main content — drop zone for conversations */}
+        <main
+          style={{ height: '100%', overflow: 'hidden', outline: dropActive ? '2px solid var(--accent)' : 'none', outlineOffset: -2 }}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes('text/conversation-id')) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+              setDropActive(true);
+            }
+          }}
+          onDragLeave={() => setDropActive(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDropActive(false);
+            const id = e.dataTransfer.getData('text/conversation-id');
+            if (id) addPanel(id);
+          }}
+        >
           {newSessionCwd && newSessionId
             ? <TerminalView sessionId={newSessionId} cwd={newSessionCwd} />
-            : selectedId
-            ? <ConversationView conversationId={selectedId} />
+            : panels.length > 0
+            ? <MultiPanelArea panelIds={panels} />
             : <EmptyMain />
           }
         </main>

@@ -49,6 +49,11 @@ export function ConversationItem({ conversation, workspaceName, selected, onClic
 
       <div
         className="w-full text-left px-3 flex flex-col gap-0.5 cursor-pointer"
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/conversation-id', conversation.id);
+          e.dataTransfer.effectAllowed = 'copy';
+        }}
         style={{
           padding: '8px 12px',
           background: selected
