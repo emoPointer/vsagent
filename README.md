@@ -1,40 +1,47 @@
 # vsagent
 
-A desktop application for browsing, searching, and continuing Claude Code AI agent sessions. Built with Tauri v2 (Rust) + React + TypeScript.
+A native desktop client for browsing, searching, and resuming [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions. Built with Tauri v2 (Rust) + React + TypeScript.
 
-![vsagent screenshot](docs/screenshot.png)
+> **Think of it as a GUI for your Claude Code history** — browse past conversations with rich rendering, search across all sessions, and resume any session in an embedded terminal.
 
-## What it does
+## Features
 
-vsagent reads your Claude Code session history from `~/.claude/projects/` and gives you a fast, searchable UI to review past conversations and resume them in an embedded terminal.
+### Session Browser
+- Flat conversation list sorted by recency, with project name and git branch as subtitle
+- Auto-imported from `~/.claude/projects/` — new sessions appear automatically via file watcher
+- Auto-rename: uses Claude Code's `custom-title` when available, falls back to first user message
+- Per-conversation settings: environment variables injected at PTY spawn
 
-**Key capabilities:**
+### Rich Conversation Viewer
+- **Human messages** — shown with "You" label and blue accent
+- **Claude text** — rendered as Markdown with syntax-highlighted code blocks
+- **Tool calls** — collapsible cards (`▶ Bash`, `▶ Read`, `▶ Write`, etc.) showing input parameters
+- **Tool output** — monospace terminal output, scrollable and collapsible for long results
+- Virtual scrolling for conversations with thousands of messages
 
-- **Session browser** — All Claude Code sessions grouped by workspace (git repo), sorted by recent activity
-- **Conversation viewer** — Full message history with structured rendering: text, tool calls (`▶ Bash`, `▶ Read`, etc.), and tool output in collapsible blocks
-- **Embedded terminal** — Resume any session directly via `claude --resume <id>` in a built-in PTY terminal (powered by xterm.js). The terminal opens in the workspace's root directory automatically.
-- **Full-text search** — Search across all messages with SQLite FTS5; results highlight in context
-- **Live updates** — File watcher detects new sessions and messages as they're written
-- **Themes** — Light, dark, and system-follow themes
-- **Settings** — Configurable font size, panel layout, and other preferences
+### Multi-Panel Layout
+- **Drag & drop** a conversation from the sidebar to the center area to open side-by-side panels
+- Each panel is 50% width; scroll horizontally to see more panels
+- Dragging over a single panel animates it to 50% in real-time with a ghost placeholder
+- Custom scrollbar at top, hidden by default, fades in on hover
+- Scroll horizontally with mouse wheel in the title bar zone
 
-## Screenshots
+### Embedded Terminal
+- Resume any session via `claude --resume <id>` in a built-in PTY terminal
+- Terminal opens in the workspace's root directory automatically
+- Full ANSI rendering, Unicode support, IME input (Chinese, Japanese, etc.)
+- Image paste from clipboard (Ctrl+V) and file drag-and-drop
 
-```
-┌─────────────────┬──────────────────────────────────────────┐
-│  Workspaces     │  Conversation  │  Terminal                │
-│                 │                │                          │
-│ ▼ my-project    │ You            │  $ claude --resume ...   │
-│   session 1     │  列出文件       │  > Loading session...    │
-│   session 2     │               │  > Welcome back!         │
-│                 │ Claude         │                          │
-│ ▼ other-project │  ▶ Bash [展开] │                          │
-│   session 3     │  ls -la        │                          │
-│                 │  ├─ output ──  │                          │
-│                 │  │ total 28    │                          │
-│                 │  │ ...         │                          │
-└─────────────────┴────────────────┴──────────────────────────┘
-```
+### Search
+- Full-text search across all messages powered by SQLite FTS5
+- Results show matching text with context, deduplicated per conversation
+- Sidebar auto-opens when typing in the search bar
+
+### Customization
+- Themes: dark, light, system-follow
+- Font family: Geist Mono, JetBrains Mono, Fira Code, IBM Plex Mono, Source Code Pro, Commit Mono
+- Adjustable font size
+- Keyboard shortcuts: `Ctrl+B` toggle sidebar
 
 ## Tech Stack
 
@@ -44,114 +51,158 @@ vsagent reads your Claude Code session history from `~/.claude/projects/` and gi
 | Frontend | React 19 + TypeScript + Vite 6 |
 | Styling | Tailwind CSS v4 |
 | UI state | Zustand |
-| Server state | TanStack Query (React Query v5) |
-| Terminal | xterm.js + portable_pty (Rust) |
-| Database | SQLite with FTS5, via `rusqlite` |
-| Markdown | react-markdown + remark-gfm |
+| Server state | TanStack Query v5 |
+| Terminal | xterm.js + portable-pty (Rust) |
+| Database | SQLite + FTS5 via rusqlite |
+| Markdown | react-markdown + rehype-highlight |
 
 ## Prerequisites
 
 - **Rust** — install via [rustup](https://rustup.rs/)
 - **Node.js 20+**
-- **Claude Code** — install via `npm install -g @anthropic-ai/claude-code`
+- **Claude Code** — `npm install -g @anthropic-ai/claude-code`
 
-> vsagent reads session data written by Claude Code. You need Claude Code installed and at least one session in `~/.claude/projects/` for the browser to show anything.
+### Linux additional dependencies
+
+```bash
+# Ubuntu / Debian
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+# Clipboard support (for image paste in terminal)
+sudo apt install xclip          # X11
+# or
+sudo apt install wl-clipboard   # Wayland
+```
+
+> vsagent reads session data written by Claude Code. You need at least one session in `~/.claude/projects/` for the browser to show anything.
 
 ## Getting Started
 
 ```bash
-# Clone and install dependencies
-git clone https://github.com/your-username/vsagent.git
+git clone https://github.com/emoPointer/vsagent.git
 cd vsagent
 npm install
 
-# Start in development mode (hot-reload)
+# Development mode (hot-reload)
 npm run tauri dev
 ```
 
-The app opens automatically. It scans `~/.claude/projects/` on startup and imports any JSONL session files into a local SQLite database at `~/.vsagent/vsagent.db`.
+The app scans `~/.claude/projects/` on startup and imports JSONL session files into a local SQLite database at `~/.vsagent/vsagent.db`.
 
 ## Building
 
 ```bash
-# Production build (outputs to src-tauri/target/release/bundle/)
+# Production build
 npm run tauri build
+
+# Output: src-tauri/target/release/bundle/
+# - .deb (Linux)
+# - .dmg / .app (macOS)
+# - .msi (Windows)
 ```
 
 ## Usage
 
 ### Browsing Sessions
 
-The left sidebar lists all workspaces (git repositories) with their sessions. Click any session to view its full conversation history in the main panel.
+The left sidebar lists all conversations sorted by most recent activity. Each entry shows the conversation title, project name, git branch, and a relative timestamp. Hover the left edge or press `Ctrl+B` to toggle the sidebar.
 
-### Viewing Conversations
+### Multi-Panel View
 
-Messages are rendered with rich structure:
+Drag any conversation from the sidebar into the center area. Panels arrange horizontally at 50% width each. Use the mouse wheel over the title bar area to scroll between panels. Click the ✕ button to close a panel.
 
-- **Your messages** — shown with a "You" label and blue accent
-- **Claude's text replies** — rendered as Markdown
-- **Tool calls** — shown as collapsible cards: `▶ ToolName` with the input parameters
-- **Tool output** — shown as monospace terminal output, scrollable if long
+### Resuming in Terminal
 
-### Resuming a Session in the Terminal
+Click a conversation to open it, then switch to **Terminal** mode via the tab in the header. The embedded terminal runs `claude --resume <session-id>` in the original workspace directory.
 
-Switch to **Terminal mode** (button in the top bar) to open an embedded PTY terminal. The terminal automatically runs `claude --resume <session-id>` in the workspace's root directory, resuming the conversation from where it left off.
+### Per-Conversation Environment Variables
 
-Chinese IME input (and other input methods) is fully supported.
+Click the gear icon on any conversation in the sidebar to set environment variables. These are injected when spawning the PTY terminal. Format: one `KEY=VALUE` per line, no quotes.
 
 ### Searching
 
-Use the search bar at the top of the sidebar to search across all messages. Results show the matching message with context.
+Use the search bar at the top to search across all messages. Results highlight matching text with surrounding context. The search uses SQLite FTS5 for fast full-text indexing.
 
 ## Architecture
 
 ```
 vsagent/
-├── src/                        # React frontend
+├── src/                          # React frontend
 │   ├── components/
-│   │   ├── layout/             # Sidebar, MainPanel, ResizeHandle
-│   │   ├── sidebar/            # WorkspaceGroup, ConversationItem, SearchBar
-│   │   ├── conversation/       # ConversationView, MessageList
-│   │   │   └── blocks/         # TextBlock, ToolUseBlock, ToolResultBlock
-│   │   ├── terminal/           # TerminalView (xterm.js + Tauri PTY)
-│   │   └── settings/           # SettingsPanel
+│   │   ├── sidebar/              # ConversationItem, SidebarContent, SearchBar
+│   │   ├── conversation/         # ConversationView, MessageList
+│   │   │   └── blocks/           # TextBlock, ToolUseBlock, ToolResultBlock
+│   │   ├── panels/               # MultiPanelArea (drag-to-add, scrollbar)
+│   │   ├── terminal/             # TerminalView (xterm.js + PTY)
+│   │   ├── settings/             # SettingsPanel
+│   │   └── common/               # StatusDot, TimeAgo, ConfirmDialog
+│   ├── features/
+│   │   ├── conversations/        # Zustand store, React Query hooks, watcher
+│   │   ├── settings/             # Settings store (theme, font, fontSize)
+│   │   └── search/               # Search hook
 │   ├── lib/
-│   │   └── contentBlocks.ts    # Parses content_json into typed blocks
-│   ├── store/                  # Zustand stores
-│   └── types/                  # TypeScript interfaces
+│   │   ├── tauri.ts              # All Tauri IPC wrappers
+│   │   └── contentBlocks.ts      # Parses content_json into typed blocks
+│   └── App.tsx                   # Root layout: titlebar, sidebar, main area
 │
-└── src-tauri/                  # Rust backend
+└── src-tauri/                    # Rust backend
     └── src/
-        ├── db/                 # SQLite: schema, JSONL import, FTS search
-        ├── pty/                # PTY session management (create/kill/resize/write)
-        ├── fs/                 # File watcher for ~/.claude/projects/
-        └── lib.rs              # Tauri command handlers
+        ├── db/                   # SQLite schema, migrations, CRUD
+        ├── importer/             # JSONL parser + incremental sync
+        ├── pty/                  # PTY session management
+        ├── watcher/              # File watcher for ~/.claude/projects/
+        ├── commands/             # Tauri command handlers
+        ├── domain/               # Shared types
+        └── lib.rs                # App setup, command registration
 ```
 
 ### Data Flow
 
-1. **Import**: On startup (and via file watcher), Rust reads JSONL files from `~/.claude/projects/**/*.jsonl` and inserts them into SQLite.
-2. **Query**: React components call Tauri commands (`get_workspaces`, `get_conversations`, `get_messages`, `search_messages`) which query SQLite.
-3. **Terminal**: When the user opens the terminal, Rust spawns a PTY process and streams output back to xterm.js via Tauri events (`pty:output:<id>`).
+1. **Import** — On startup and via file watcher, Rust reads JSONL files from `~/.claude/projects/**/*.jsonl` and inserts them into SQLite (idempotent via INSERT OR IGNORE).
+2. **Query** — React components call Tauri commands which query SQLite. React Query caches results with 30s stale time.
+3. **Terminal** — Rust spawns a PTY process; output is streamed to xterm.js via Tauri events (`pty:output:<id>`). Input flows back via the `pty_write` command.
+4. **Watcher** — A debounced file watcher emits `watcher:changed` events when JSONL files are modified, triggering re-import and UI refresh.
 
-### Message Content
+### Message Content Model
 
-Claude Code stores message content as JSON blocks in JSONL files. vsagent parses `content_json` to distinguish:
+Claude Code stores messages as JSON blocks in JSONL files. vsagent parses `content_json` to render structured content:
 
-- `{"type":"text"}` — plain text / Markdown
-- `{"type":"tool_use"}` — Claude invoking a tool (Bash, Read, Write, etc.)
-- `{"type":"tool_result"}` — the output returned to Claude (treated as tool output, not human input)
+| Block type | Meaning | Rendering |
+|------------|---------|-----------|
+| `text` | Plain text / Markdown | Rendered via react-markdown |
+| `tool_use` | Claude invoking a tool | Collapsible card with tool name + parameters |
+| `tool_result` | Output returned to Claude | Monospace terminal output block |
+
+A `user` message where all blocks are `tool_result` is treated as tool output (not human input).
 
 ## Tests
 
 ```bash
-# Frontend unit tests (Vitest)
+# Frontend unit tests
 npm run test
 
 # Rust unit tests
 cd src-tauri && cargo test
 ```
 
+## Roadmap
+
+- [ ] Conversation export (Markdown, JSON)
+- [ ] Session cost tracking (token usage, API costs)
+- [ ] Keyboard navigation for conversation list
+- [ ] Custom themes / color schemes
+- [ ] Plugin system for custom renderers
+
+## Contributing
+
+Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/my-feature`)
+3. Commit your changes (`git commit -m 'feat: add my feature'`)
+4. Push to the branch (`git push origin feat/my-feature`)
+5. Open a Pull Request
+
 ## License
 
-MIT
+[MIT](LICENSE)
