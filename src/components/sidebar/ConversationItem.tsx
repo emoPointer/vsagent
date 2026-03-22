@@ -53,9 +53,14 @@ export function ConversationItem({ conversation, workspaceName, selected, onClic
         onDragStart={(e) => {
           e.dataTransfer.setData('text/conversation-id', conversation.id);
           e.dataTransfer.effectAllowed = 'copy';
+          document.body.style.userSelect = 'none';
+        }}
+        onDragEnd={() => {
+          document.body.style.userSelect = '';
         }}
         style={{
           padding: '8px 12px',
+          userSelect: 'none',
           background: selected
             ? 'rgba(59,130,246,0.18)'
             : hovered

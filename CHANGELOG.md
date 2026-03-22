@@ -1,3 +1,28 @@
+## [0.4.0] - 2026-03-22
+
+### Features
+- Multi-panel layout: drag conversations from sidebar to center area for side-by-side view
+- Panels are 50% width each, horizontally scrollable with custom scrollbar at top
+- Drag UX: 1 panel animates to 50% in real-time during drag, ghost placeholder shown
+- 2+ panels: auto-scroll to right end during drag, dashed placeholder at end
+- Custom scrollbar: hidden by default, thin 3px track at top, fades in on hover
+- Wheel-to-horizontal-scroll in title bar zone (top 36px)
+- Close button (✕) on each panel when 2+ panels open
+- Flat conversation list sorted by recency with project name/branch as subtitle
+- Font family selector in settings (Geist Mono, JetBrains Mono, Fira Code, etc.)
+- Auto-rename conversations via Claude Code's custom-title JSONL entries
+
+### Bug Fixes
+- Fixed env var deletion: invalidate conversation-env query cache on save
+- Prevent text selection during sidebar drag operations
+- Disabled Tauri drag-drop interception for JS drop events to work
+
+### Design Rationale
+- dragCounter ref pattern prevents spurious dragleave when cursor crosses child elements
+- Wheel listener on outerRef with Y-position check — only intercepts in title bar zone, doesn't block terminal/content scroll
+- Scrollbar overlay uses pointerEvents: none (visual only), thumb has pointerEvents: auto for dragging
+- document.body.style.userSelect toggled during drag to prevent global text selection
+
 ## [0.3.0] - 2026-03-21
 
 ### Features
