@@ -52,13 +52,18 @@ pub fn import_all(conn: &Connection, root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Walk directory and collect .jsonl files
+/// Walk directory and collect .jsonl files, skipping observer/mem paths
 fn walkdir(root: &Path) -> Vec<PathBuf> {
     let mut files = Vec::new();
     if let Ok(entries) = std::fs::read_dir(root) {
         for entry in entries.flatten() {
             let path = entry.path();
+            let name = path.file_name().map(|n| n.to_string_lossy()).unwrap_or_default();
+            // Skip .claude-mem and observer-sessions directories
             if path.is_dir() {
+                if name.contains(".claude-mem") || name.contains("observer-sessions") {
+                    continue;
+                }
                 files.extend(walkdir(&path));
             } else if path.extension().map_or(false, |e| e == "jsonl") {
                 files.push(path);

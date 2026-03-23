@@ -42,6 +42,11 @@ fn handle_event(app: &AppHandle, event: notify::Event) {
         if path.extension().map_or(true, |e| e != "jsonl") {
             continue;
         }
+        // Skip observer-sessions and .claude-mem paths
+        let path_str_check = path.to_string_lossy();
+        if path_str_check.contains("observer-sessions") || path_str_check.contains(".claude-mem") {
+            continue;
+        }
 
         match event.kind {
             EventKind::Create(CreateKind::File) | EventKind::Modify(ModifyKind::Data(_)) => {

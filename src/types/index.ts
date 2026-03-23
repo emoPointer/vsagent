@@ -35,6 +35,23 @@ export interface Message {
   created_at: number;
 }
 
+export interface SshHost {
+  name: string;
+  hostname: string;
+  user: string | null;
+  port: number | null;
+}
+
+export interface RemoteJsonlFile {
+  path: string;
+  content: string;
+}
+
+export interface DiscoverResult {
+  files: RemoteJsonlFile[];
+  active_session_ids: string[];
+}
+
 export interface SearchResult {
   message_id: string;
   conversation_id: string;

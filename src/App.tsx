@@ -5,9 +5,11 @@ import { SidebarContent } from './components/sidebar/SidebarContent';
 import { MultiPanelArea } from './components/panels/MultiPanelArea';
 import { TerminalView } from './components/terminal/TerminalView';
 import { SettingsPanel } from './components/settings/SettingsPanel';
+import { SshHostDialog } from './components/ssh/SshHostDialog';
 import { useConversationStore } from './features/conversations/conversationStore';
 import { useWatcherEvents } from './features/conversations/useWatcherEvents';
 import { useSettingsStore } from './features/settings/settingsStore';
+import { useSshStore } from './features/ssh/sshStore';
 
 const SIDEBAR_WIDTH = 280;
 const TITLEBAR_H = 36;
@@ -16,7 +18,9 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
 });
 
-function TitleBar({ searchQuery, onSearch, onSettings }: { searchQuery: string; onSearch: (q: string) => void; onSettings: () => void }) {
+function TitleBar({ searchQuery, onSearch, onSettings, onSsh }: { searchQuery: string; onSearch: (q: string) => void; onSettings: () => void; onSsh: () => void }) {
+  const sshConnected = useSshStore((s) => s.connectedHost);
+  const sshDisconnect = useSshStore((s) => s.disconnect);
   const win = getCurrentWindow();
   const handleDragMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -74,8 +78,25 @@ function TitleBar({ searchQuery, onSearch, onSettings }: { searchQuery: string; 
       {/* Right drag spacer */}
       <div data-tauri-drag-region style={{ flex: 1 }} />
 
-      {/* Right: settings + window controls — must opt out of drag region */}
+      {/* Right: SSH + settings + window controls — must opt out of drag region */}
       <div style={{ display: 'flex', alignItems: 'center', paddingRight: 4, gap: 0, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        {/* SSH button / indicator */}
+        <button
+          onClick={sshConnected ? sshDisconnect : onSsh}
+          title={sshConnected ? `SSH: ${sshConnected.name} (click to disconnect)` : 'SSH Connect'}
+          style={{
+            width: 36, height: TITLEBAR_H, border: 'none', background: 'transparent',
+            color: sshConnected ? '#22c55e' : 'var(--text-muted)', fontSize: 14, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          } as React.CSSProperties}
+          onMouseEnter={(e) => { if (!sshConnected) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'; }}
+          onMouseLeave={(e) => { if (!sshConnected) (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-muted)'; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="5.5,3 2,8 5.5,13" />
+            <polyline points="10.5,3 14,8 10.5,13" />
+          </svg>
+        </button>
         <button
           onClick={onSettings}
           title="设置"
@@ -121,6 +142,7 @@ function AppInner() {
   const [hovered, setHovered] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showSshDialog, setShowSshDialog] = useState(false);
   const newSessionCwd = useConversationStore((s) => s.newSessionCwd);
   const newSessionId = useConversationStore((s) => s.newSessionId);
   const panels = useConversationStore((s) => s.panels);
@@ -163,8 +185,9 @@ function AppInner() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
-      <TitleBar searchQuery={searchQuery} onSearch={setSearchQuery} onSettings={() => setShowSettings(true)} />
+      <TitleBar searchQuery={searchQuery} onSearch={setSearchQuery} onSettings={() => setShowSettings(true)} onSsh={() => setShowSshDialog(true)} />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      {showSshDialog && <SshHostDialog onClose={() => setShowSshDialog(false)} />}
 
       <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
         {/* Hover trigger + sidebar overlay */}

@@ -1,6 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { ConversationView } from '../conversation/ConversationView';
+import { RemoteConversationView, NewRemoteSessionView } from '../conversation/RemoteConversationView';
 import { useConversationStore } from '../../features/conversations/conversationStore';
+import { useSshStore } from '../../features/ssh/sshStore';
 
 interface Props {
   panelIds: string[];
@@ -209,7 +211,7 @@ export function MultiPanelArea({ panelIds }: Props) {
               </button>
             )}
 
-            <ConversationView conversationId={id} />
+            <PanelContent panelId={id} />
           </div>
         ))}
 
@@ -285,4 +287,28 @@ export function MultiPanelArea({ panelIds }: Props) {
       </div>
     </div>
   );
+}
+
+/** Route panel to local ConversationView or remote RemoteConversationView based on id prefix */
+function PanelContent({ panelId }: { panelId: string }) {
+  const remoteConversations = useSshStore((s) => s.remoteConversations);
+
+  if (panelId.startsWith('ssh-new:')) {
+    return <NewRemoteSessionView sessionKey={panelId} />;
+  }
+
+  if (panelId.startsWith('ssh:')) {
+    const convId = panelId.slice(4);
+    const conv = remoteConversations.find((c) => c.id === convId);
+    if (!conv) {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>远程对话未找到</p>
+        </div>
+      );
+    }
+    return <RemoteConversationView conversation={conv} />;
+  }
+
+  return <ConversationView conversationId={panelId} />;
 }

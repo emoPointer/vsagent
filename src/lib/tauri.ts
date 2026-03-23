@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Workspace, Conversation, Message, SearchResult } from '../types';
+import type { Workspace, Conversation, Message, SearchResult, SshHost, DiscoverResult } from '../types';
 
 export const api = {
   listWorkspaces: () =>
@@ -55,4 +55,17 @@ export const api = {
 
   writeClipboardText: (text: string) =>
     invoke<void>('write_clipboard_text', { text }),
+
+  // SSH
+  parseSshConfig: () =>
+    invoke<SshHost[]>('parse_ssh_config'),
+
+  sshExec: (host: string, user: string | null, port: number | null, command: string) =>
+    invoke<string>('ssh_exec', { host, user, port, command }),
+
+  sshTestConnection: (host: string, user: string | null, port: number | null) =>
+    invoke<string>('ssh_test_connection', { host, user, port }),
+
+  sshDiscoverConversations: (host: string, user: string | null, port: number | null) =>
+    invoke<DiscoverResult>('ssh_discover_conversations', { host, user, port }),
 };

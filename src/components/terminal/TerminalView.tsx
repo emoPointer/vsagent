@@ -14,6 +14,8 @@ interface Props {
   command?: string;
   /** Raw KEY=VALUE text block; passed to PTY as injected env vars */
   envText?: string;
+  /** Called when the PTY process exits */
+  onExit?: () => void;
 }
 
 const DARK_THEME = {
@@ -49,7 +51,7 @@ async function readImageFile(file: File): Promise<[number[], string]> {
   return [Array.from(new Uint8Array(buf)), ext];
 }
 
-export function TerminalView({ sessionId, cwd, command, envText }: Props) {
+export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -174,7 +176,10 @@ export function TerminalView({ sessionId, cwd, command, envText }: Props) {
 
     // Pipe PTY exit to xterm
     const unlistenExit = listen(`pty:exit:${sessionId}`, () => {
-      if (!disposed) term.writeln('\r\n\x1b[2m[session ended]\x1b[0m');
+      if (!disposed) {
+        term.writeln('\r\n\x1b[2m[session ended]\x1b[0m');
+        onExit?.();
+      }
     });
 
     const dataDisposable = term.onData((data) => {

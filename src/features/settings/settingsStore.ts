@@ -24,12 +24,15 @@ interface Settings {
   theme: Theme;
   fontSize: FontSize;
   fontId: string;
+  /** Last successfully connected SSH host name */
+  lastSshHost: string | null;
 }
 
 interface SettingsStore extends Settings {
   setTheme: (theme: Theme) => void;
   setFontSize: (size: FontSize) => void;
   setFontId: (id: string) => void;
+  setLastSshHost: (name: string | null) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -38,9 +41,11 @@ export const useSettingsStore = create<SettingsStore>()(
       theme: 'dark',
       fontSize: 13,
       fontId: 'geist-mono',
+      lastSshHost: null,
       setTheme: (theme) => set({ theme }),
       setFontSize: (fontSize) => set({ fontSize }),
       setFontId: (fontId) => set({ fontId }),
+      setLastSshHost: (lastSshHost) => set({ lastSshHost }),
     }),
     { name: 'vsagent-settings' }
   )

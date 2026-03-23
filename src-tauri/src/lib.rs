@@ -8,6 +8,7 @@ pub mod importer;
 pub mod watcher;
 pub mod commands;
 pub mod pty;
+pub mod ssh;
 
 pub struct AppState {
     pub db: Mutex<Connection>,
@@ -42,6 +43,10 @@ pub fn run() {
             commands::files::save_temp_image,
             commands::files::read_clipboard_image,
             commands::files::write_clipboard_text,
+            commands::ssh::parse_ssh_config,
+            commands::ssh::ssh_exec,
+            commands::ssh::ssh_test_connection,
+            commands::ssh::ssh_discover_conversations,
         ])
         .setup(|app| {
             let handle = app.handle().clone();
