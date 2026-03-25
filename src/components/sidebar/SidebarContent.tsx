@@ -41,13 +41,13 @@ export function SidebarContent({ searchQuery }: Props) {
     );
   }, [conversations]);
 
-  const { startNewSession, selectedId, select, addPanel } = useConversationStore();
+  const { startNewSession, selectedId, select } = useConversationStore();
 
   const handleNewSession = () => {
     if (sshConnected) {
       // Remote: open a new SSH panel with fresh claude session
       const ts = Date.now();
-      addPanel(`ssh-new:${ts}`);
+      select(`ssh-new:${ts}`);
     } else {
       const firstWs = workspaces[0];
       startNewSession(firstWs?.root_path ?? '/tmp');
@@ -55,7 +55,7 @@ export function SidebarContent({ searchQuery }: Props) {
   };
 
   const handleSelectRemote = (conv: RemoteConversation) => {
-    addPanel(`ssh:${conv.id}`);
+    select(`ssh:${conv.id}`);
   };
 
   return (
