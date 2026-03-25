@@ -21,6 +21,7 @@ export function ConversationItem({ conversation, workspaceName, selected, onClic
   const [confirming, setConfirming] = useState(false);
   const qc = useQueryClient();
   const { selectedId, select } = useConversationStore();
+  const isMounted = useConversationStore((s) => s.mountedPanels.includes(conversation.id));
 
   const handleDelete = async () => {
     await api.deleteConversation(conversation.id);
@@ -75,7 +76,7 @@ export function ConversationItem({ conversation, workspaceName, selected, onClic
       >
         {/* Row 1: status + title + actions */}
         <div className="flex items-center gap-2 w-full">
-          <StatusDot status={conversation.status} />
+          <StatusDot status={isMounted ? 'running' : conversation.status} />
 
           <span
             className="flex-1 truncate"
