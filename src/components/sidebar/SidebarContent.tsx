@@ -210,6 +210,8 @@ function RemoteConversationItem({ conversation, selected, onClick }: { conversat
   const label = conversation.title ?? conversation.id.slice(0, 10);
   const wsName = conversation.workspacePath?.split('/').pop();
   const panelId = `ssh:${conversation.id}`;
+  // Real-time: output flowing in our terminal; fallback: remote ps aux detection
+  const isWorking = useConversationStore((s) => !!s.activeSessions[panelId]) || conversation.isActive;
 
   return (
     <div
@@ -239,8 +241,8 @@ function RemoteConversationItem({ conversation, selected, onClick }: { conversat
       <div className="flex items-center gap-2 w-full">
         <div style={{
           width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-          background: conversation.isActive ? '#22c55e' : 'var(--text-muted)',
-          opacity: conversation.isActive ? 1 : 0.4,
+          background: isWorking ? '#22c55e' : 'var(--text-muted)',
+          opacity: isWorking ? 1 : 0.4,
         }} />
         <span className="flex-1 truncate" style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 500 }}>
           {label}

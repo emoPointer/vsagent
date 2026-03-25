@@ -12,6 +12,8 @@ interface ConversationStore {
   mountedPanels: string[];
   /** Per-conversation PTY revision counter — increment to force terminal restart */
   ptyRevisions: Record<string, number>;
+  /** Sessions that are actively producing output (Claude is working) */
+  activeSessions: Record<string, boolean>;
   select: (id: string) => void;
   addPanel: (id: string) => void;
   /** Explicitly close a panel — removes from both visible and mounted (kills PTY) */
@@ -19,6 +21,8 @@ interface ConversationStore {
   startNewSession: (cwd: string) => void;
   /** Increment PTY revision for a conversation, forcing TerminalView to remount */
   restartPty: (conversationId: string) => void;
+  /** Mark a session as actively producing output (Claude is working) */
+  setSessionActive: (id: string, active: boolean) => void;
   clear: () => void;
 }
 
@@ -29,6 +33,7 @@ export const useConversationStore = create<ConversationStore>((set) => ({
   panels: [],
   mountedPanels: [],
   ptyRevisions: {},
+  activeSessions: {},
   select: (id) => set((s) => ({
     selectedId: id,
     newSessionCwd: null,
@@ -62,5 +67,9 @@ export const useConversationStore = create<ConversationStore>((set) => ({
   restartPty: (id) => set((s) => ({
     ptyRevisions: { ...s.ptyRevisions, [id]: (s.ptyRevisions[id] ?? 0) + 1 },
   })),
+  setSessionActive: (id, active) => set((s) => {
+    if (s.activeSessions[id] === active) return s;
+    return { activeSessions: { ...s.activeSessions, [id]: active } };
+  }),
   clear: () => set({ selectedId: null, newSessionCwd: null, newSessionId: null, panels: [], mountedPanels: [] }),
 }));

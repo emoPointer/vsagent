@@ -5,6 +5,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { listen } from '@tauri-apps/api/event';
 import { api } from '../../lib/tauri';
 import { useSettingsStore, FONT_OPTIONS } from '../../features/settings/settingsStore';
+import { useConversationStore } from '../../features/conversations/conversationStore';
 import '@xterm/xterm/css/xterm.css';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
   envText?: string;
   /** Called when the PTY process exits */
   onExit?: () => void;
+  /** Key used for activity tracking in the store (defaults to sessionId) */
+  activityKey?: string;
 }
 
 const DARK_THEME = {
@@ -55,7 +58,7 @@ async function readImageFile(file: File): Promise<[number[], string]> {
 // when async unlisten races with new listen during component remount
 const activeInstances = new Map<string, number>();
 
-export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props) {
+export function TerminalView({ sessionId, cwd, command, envText, onExit, activityKey }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -182,8 +185,21 @@ export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props
     // Pipe PTY output to xterm — guard with instance check to prevent duplicate writes
     const isActive = () => !disposed && activeInstances.get(sessionId) === instance;
 
+    // Track output activity — mark session as "working" while data flows,
+    // idle after 3s of silence. Only updates store on state transitions.
+    const setSessionActive = useConversationStore.getState().setSessionActive;
+    const trackKey = activityKey ?? sessionId;
+    let idleTimer = 0;
+
     const unlistenOutput = listen<string>(`pty:output:${sessionId}`, (event) => {
-      if (isActive()) term.write(event.payload);
+      if (isActive()) {
+        term.write(event.payload);
+        setSessionActive(trackKey, true);
+        clearTimeout(idleTimer);
+        idleTimer = window.setTimeout(() => {
+          if (!disposed) setSessionActive(trackKey, false);
+        }, 3000);
+      }
     });
 
     const unlistenExit = listen(`pty:exit:${sessionId}`, () => {
@@ -226,6 +242,8 @@ export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props
 
     return () => {
       disposed = true;
+      clearTimeout(idleTimer);
+      setSessionActive(trackKey, false);
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
       ro.disconnect();

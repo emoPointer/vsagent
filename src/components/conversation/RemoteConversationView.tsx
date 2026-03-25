@@ -184,6 +184,7 @@ export function RemoteConversationView({ conversation, envText }: Props) {
             cwd="/tmp"
             command={fullCommand}
             onExit={handleExit}
+            activityKey={panelId}
           />
           {ended && <SessionEndedOverlay onReconnect={handleReconnect} onClose={handleClose} />}
         </div>

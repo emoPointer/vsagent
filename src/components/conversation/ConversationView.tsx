@@ -121,6 +121,7 @@ export function ConversationView({ conversationId }: Props) {
               cwd={workspacePath}
               command={`claude --resume "${conversationId}"`}
               envText={envText}
+              activityKey={conversationId}
             />
           </div>
         ) : mode === 'terminal' ? (
