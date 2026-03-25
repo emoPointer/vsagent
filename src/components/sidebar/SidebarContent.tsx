@@ -170,6 +170,7 @@ export function SidebarContent({ searchQuery }: Props) {
                   <RemoteConversationItem
                     key={conv.id}
                     conversation={conv}
+                    selected={selectedId === `ssh:${conv.id}`}
                     onClick={() => handleSelectRemote(conv)}
                   />
                 ))}
@@ -204,7 +205,7 @@ export function SidebarContent({ searchQuery }: Props) {
   );
 }
 
-function RemoteConversationItem({ conversation, onClick }: { conversation: RemoteConversation; onClick: () => void }) {
+function RemoteConversationItem({ conversation, selected, onClick }: { conversation: RemoteConversation; selected: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   const label = conversation.title ?? conversation.id.slice(0, 10);
   const wsName = conversation.workspacePath?.split('/').pop();
@@ -227,8 +228,10 @@ function RemoteConversationItem({ conversation, onClick }: { conversation: Remot
       style={{
         padding: '8px 12px',
         cursor: 'pointer',
-        background: hovered ? 'var(--hover-bg)' : 'transparent',
-        borderLeft: '2px solid transparent',
+        background: selected
+          ? 'rgba(59,130,246,0.18)'
+          : hovered ? 'var(--hover-bg)' : 'transparent',
+        borderLeft: selected ? '2px solid var(--accent)' : '2px solid transparent',
         transition: 'background 0.12s',
         userSelect: 'none',
       }}
