@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/tauri';
 import { MessageList } from './MessageList';
 import { TerminalView } from '../terminal/TerminalView';
+import { useConversationStore } from '../../features/conversations/conversationStore';
 
 interface Props { conversationId: string; }
 
@@ -41,6 +42,8 @@ export function ConversationView({ conversationId }: Props) {
     queryKey: ['conversation-env', conversationId],
     queryFn: () => api.getConversationEnv(conversationId),
   });
+
+  const ptyRevision = useConversationStore((s) => s.ptyRevisions[conversationId] ?? 0);
 
   const stats = useMemo(() => {
     const totalTokens = messages.reduce((sum, m) =>
@@ -113,7 +116,8 @@ export function ConversationView({ conversationId }: Props) {
             flexDirection: 'column',
           }}>
             <TerminalView
-              sessionId={conversationId}
+              key={ptyRevision}
+              sessionId={`${conversationId}-r${ptyRevision}`}
               cwd={workspacePath}
               command={`claude --resume "${conversationId}"`}
               envText={envText}

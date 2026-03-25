@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/tauri';
 import { Conversation } from '../../types';
+import { useConversationStore } from '../../features/conversations/conversationStore';
 
 interface Props {
   conversation: Conversation;
@@ -16,6 +17,7 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
+  const restartPty = useConversationStore((s) => s.restartPty);
 
   useEffect(() => {
     api.getConversationEnv(conversation.id).then((env) => {
@@ -34,6 +36,8 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
     await api.setConversationEnv(conversation.id, envText);
     qc.invalidateQueries({ queryKey: ['conversations'] });
     qc.invalidateQueries({ queryKey: ['conversation-env', conversation.id] });
+    // Restart the PTY so new env vars take effect immediately
+    restartPty(conversation.id);
     setSaving(false);
     onClose();
   };
@@ -120,7 +124,7 @@ export function ConversationEditDialog({ conversation, onClose }: Props) {
             }}
           />
           <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
-            这些变量会在启动终端时注入。修改后需重启终端会话才能生效（清空内容即可取消所有变量）。
+            保存后终端会自动重启以应用新的环境变量。清空内容即可取消所有变量。
           </p>
         </div>
 
