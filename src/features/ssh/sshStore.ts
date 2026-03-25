@@ -153,9 +153,9 @@ export const useSshStore = create<SshStore>((set, get) => ({
   },
 
   disconnect: () => {
-    // Remove all SSH panels
+    // Remove all SSH panels (both visible and background-mounted)
     const convStore = useConversationStore.getState();
-    const sshPanels = convStore.panels.filter((p) => p.startsWith('ssh:') || p.startsWith('ssh-new:'));
+    const sshPanels = convStore.mountedPanels.filter((p) => p.startsWith('ssh:') || p.startsWith('ssh-new:'));
     for (const id of sshPanels) {
       convStore.removePanel(id);
     }

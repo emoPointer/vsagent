@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { SidebarContent } from './components/sidebar/SidebarContent';
-import { MultiPanelArea } from './components/panels/MultiPanelArea';
+import { MultiPanelArea, PanelContent } from './components/panels/MultiPanelArea';
 import { TerminalView } from './components/terminal/TerminalView';
 import { SettingsPanel } from './components/settings/SettingsPanel';
 import { SshHostDialog } from './components/ssh/SshHostDialog';
@@ -146,6 +146,7 @@ function AppInner() {
   const newSessionCwd = useConversationStore((s) => s.newSessionCwd);
   const newSessionId = useConversationStore((s) => s.newSessionId);
   const panels = useConversationStore((s) => s.panels);
+  const mountedPanels = useConversationStore((s) => s.mountedPanels);
   const addPanel = useConversationStore((s) => s.addPanel);
   const [dropActive, setDropActive] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -237,6 +238,16 @@ function AppInner() {
             : panels.length > 0
             ? <MultiPanelArea panelIds={panels} />
             : <EmptyMain />
+          }
+
+          {/* Hidden panels — keep PTY alive when switching conversations */}
+          {mountedPanels
+            .filter((id) => !panels.includes(id))
+            .map((id) => (
+              <div key={`bg-${id}`} style={{ display: 'none' }}>
+                <PanelContent panelId={id} />
+              </div>
+            ))
           }
         </main>
       </div>

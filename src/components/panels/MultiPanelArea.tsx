@@ -223,7 +223,7 @@ export function MultiPanelArea({ panelIds }: Props) {
 }
 
 /** Route panel to local ConversationView or remote RemoteConversationView based on id prefix */
-function PanelContent({ panelId }: { panelId: string }) {
+export function PanelContent({ panelId }: { panelId: string }) {
   const remoteConversations = useSshStore((s) => s.remoteConversations);
 
   if (panelId.startsWith('ssh-new:')) {
