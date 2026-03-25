@@ -51,6 +51,10 @@ async function readImageFile(file: File): Promise<[number[], string]> {
   return [Array.from(new Uint8Array(buf)), ext];
 }
 
+// Track active listener instance per sessionId globally to prevent duplicate event handling
+// when async unlisten races with new listen during component remount
+const activeInstances = new Map<string, number>();
+
 export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
@@ -101,6 +105,12 @@ export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props
     fitAddonRef.current = fitAddon;
 
     let disposed = false;
+
+    // Increment instance counter — only the latest instance writes to the terminal.
+    // This prevents duplicate output when async unlisten races with new listen.
+    const prevInstance = activeInstances.get(sessionId) ?? 0;
+    const instance = prevInstance + 1;
+    activeInstances.set(sessionId, instance);
 
     // IME accumulation fix
     let isComposing = false;
@@ -169,21 +179,22 @@ export function TerminalView({ sessionId, cwd, command, envText, onExit }: Props
     el.addEventListener('dragover', onDragOver as EventListener);
     el.addEventListener('drop', onDrop as EventListener);
 
-    // Pipe PTY output to xterm
+    // Pipe PTY output to xterm — guard with instance check to prevent duplicate writes
+    const isActive = () => !disposed && activeInstances.get(sessionId) === instance;
+
     const unlistenOutput = listen<string>(`pty:output:${sessionId}`, (event) => {
-      if (!disposed) term.write(event.payload);
+      if (isActive()) term.write(event.payload);
     });
 
-    // Pipe PTY exit to xterm
     const unlistenExit = listen(`pty:exit:${sessionId}`, () => {
-      if (!disposed) {
+      if (isActive()) {
         term.writeln('\r\n\x1b[2m[session ended]\x1b[0m');
         onExit?.();
       }
     });
 
     const dataDisposable = term.onData((data) => {
-      if (!disposed) api.ptyWrite(sessionId, data);
+      if (isActive()) api.ptyWrite(sessionId, data);
     });
 
     let ptyReady = false;
