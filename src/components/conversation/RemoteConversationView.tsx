@@ -135,7 +135,7 @@ export function RemoteConversationView({ conversation, envText }: Props) {
   }
 
   const parts = buildRemoteParts(conversation.workspacePath, envText);
-  parts.push(`exec claude --resume "${conversation.id}"`);
+  parts.push(`exec claude --resume "${conversation.sessionId}"`);
   const remoteCmd = parts.join(' && ');
   const fullCommand = buildFullSshCommand(host.name, host.user, host.port, remoteCmd);
   const sessionId = `ssh-${conversation.id}-r${revision}`;

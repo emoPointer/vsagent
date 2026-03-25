@@ -6,7 +6,10 @@ import { useConversationStore } from '../conversations/conversationStore';
 
 /** Parsed remote conversation from JSONL */
 export interface RemoteConversation {
+  /** Unique ID derived from JSONL filename (not sessionId, which is shared across sub-agents) */
   id: string;
+  /** Claude Code sessionId — shared across main conversation and its sub-agents */
+  sessionId: string;
   title: string | null;
   workspacePath: string | null;
   branchName: string | null;
@@ -100,8 +103,13 @@ function parseJsonlToConversation(jsonlPath: string, content: string, activeIds?
 
   if (!sessionId) return null;
 
+  // Use the JSONL filename (without extension) as unique ID, since sessionId
+  // is shared across a main conversation and its sub-agents.
+  const fileId = jsonlPath.split('/').pop()?.replace(/\.jsonl$/, '') ?? sessionId;
+
   return {
-    id: sessionId,
+    id: fileId,
+    sessionId,
     title: title ?? firstUserText,
     workspacePath: cwd,
     branchName: branch,
