@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { WebglAddon } from '@xterm/addon-webgl';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { listen } from '@tauri-apps/api/event';
 import { api } from '../../lib/tauri';
@@ -103,6 +104,15 @@ export function TerminalView({ sessionId, cwd, command, envText, onExit, activit
     term.loadAddon(unicode11Addon);
     unicode11Addon.activate(term);
     term.open(containerRef.current);
+
+    // GPU-accelerated rendering — falls back to canvas if WebGL unavailable
+    try {
+      const webglAddon = new WebglAddon();
+      webglAddon.onContextLoss(() => { webglAddon.dispose(); });
+      term.loadAddon(webglAddon);
+    } catch {
+      // WebGL not supported, use default canvas renderer
+    }
 
     termRef.current = term;
     fitAddonRef.current = fitAddon;
